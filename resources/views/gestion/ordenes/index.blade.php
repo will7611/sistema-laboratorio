@@ -112,28 +112,27 @@
 <script>
 $(document).ready(function(){
 
-    // Abrir modal de PDF
+    // 1. Abrir modal de PDF
     $(document).on('click', '.btn-cargar-pdf', function(){
         $('#resultado_id').val($(this).data('resultado-id'));
         $('#orden_id').val($(this).data('orden-id'));
         $('#modalSubirPDF').modal('show');
     });
 
-    // Subir PDF
+    // 2. Subir PDF (AJAX)
     $('#formSubirPDF').on('submit', function(e){
         e.preventDefault();
-
         let resultadoId = $('#resultado_id').val();
         let formData = new FormData(this);
 
         Swal.fire({
-            title: 'Subiendo PDF...',
+            title: 'Subiendo y enviando a n8n...',
             didOpen: () => Swal.showLoading(),
             allowOutsideClick: false
         });
 
         $.ajax({
-            url: `/resultados/${resultadoId}/upload`,
+            url: `/resultados/${resultadoId}/upload`, // Ruta web POST
             type: "POST",
             data: formData,
             contentType: false,
@@ -145,72 +144,43 @@ $(document).ready(function(){
             },
             error: function(xhr){
                 Swal.close();
-                Swal.fire('Error', xhr.responseJSON?.message || 'Error al subir PDF', 'error');
+                let msg = xhr.responseJSON?.message || 'Error al subir PDF';
+                Swal.fire('Error', msg, 'error');
             }
         });
     });
 
-    // Obtener datos y enviar correo & WhatsApp
+    // 3. Botón "Enviar WhatsApp/Email" (Reenvío manual)
     $(document).on('click', '.btn-enviar-correo', function(){
         const id = $(this).data('resultado-id');
 
         Swal.fire({
-            title: 'Obteniendo datos...',
+            title: 'Enviando a n8n...',
+            text: 'Se enviará correo y WhatsApp al paciente.',
             didOpen: () => Swal.showLoading(),
             allowOutsideClick: false
         });
 
         $.ajax({
-            url: `/api/resultados/${id}`,
-            type: 'GET',
-            headers: {
-                'Authorization': 'Bearer {{ $n8nToken }}'
+            url: `/resultados/${id}/enviar-n8n`, // Nueva ruta web limpia
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}' // Usamos CSRF token de Blade
             },
             success: function(res){
                 Swal.close();
-                console.log('Datos obtenidos:', res);
-
-                Swal.fire({
-                    title: 'Enviar a n8n?',
-                    html: `<pre style="text-align:left;">${JSON.stringify(res, null, 2)}</pre>`,
-                    showCancelButton: true,
-                    confirmButtonText: 'Enviar',
-                }).then((result) => {
-                    if(result.isConfirmed){
-                        enviarAN8n(id);
-                    }
-                });
+                if(res.success){
+                    Swal.fire('Enviado', res.message, 'success');
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
             },
             error: function(xhr){
                 Swal.close();
-                Swal.fire('Error', xhr.responseJSON?.message || 'No se pudo obtener los datos', 'error');
+                Swal.fire('Error', 'Fallo de conexión con el servidor', 'error');
             }
         });
     });
-
-    function enviarAN8n(resultadoId){
-        Swal.fire({
-            title: 'Enviando a n8n...',
-            didOpen: () => Swal.showLoading(),
-            allowOutsideClick: false
-        });
-
-        $.ajax({
-            url: `/api/resultados/${resultadoId}/send`,
-            type: 'POST',
-            headers: {
-                'Authorization': 'Bearer {{ $n8nToken }}'
-            },
-            success: function(res){
-                Swal.close();
-                Swal.fire('Éxito', res.message, 'success').then(()=> location.reload());
-            },
-            error: function(xhr){
-                Swal.close();
-                Swal.fire('Error', xhr.responseJSON?.message || 'No se pudo enviar', 'error');
-            }
-        });
-    }
 
 });
 </script>

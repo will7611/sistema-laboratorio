@@ -1,0 +1,47 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "resultados-pdf",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Laravel",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ],
+      "webhookId": "resultados-pdf"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Conexión exitosa con n8n\",\n  \"datos_recibidos\": {\n    \"paciente\": \"{{ $json.body.paciente.nombre }}\",\n    \"pdf\": \"{{ $json.body.pdf_url }}\"\n  }\n}",
+        "options": {}
+      },
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Laravel": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
