@@ -45,6 +45,14 @@
                         </div>
                     </div>
 
+                    {{-- BUSCADOR --}}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Buscar análisis</label>
+                            <input type="text" id="buscar-analisis" class="form-control" placeholder="Ej: hemograma, glucosa, orina...">
+                        </div>
+                    </div>
+
                     {{-- TABLA DE ANÁLISIS --}}
                     <h5 class="mb-3">Análisis clínicos</h5>
 
@@ -114,8 +122,34 @@
 </div>
 @endsection
 
+
+
 @push('scripts')
 <script>
+
+    // —— Función para quitar acentos y normalizar texto ——
+    function normalizar(texto) {
+        return texto
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") 
+            .toLowerCase();
+    }
+
+    // —— Buscador de análisis ——
+    $(document).on('input', '#buscar-analisis', function () {
+        const texto = normalizar($(this).val());
+
+        $("#tabla-analisis-proforma tbody tr").each(function () {
+            const nombre = normalizar($(this).find("td:nth-child(2)").text());
+            const area   = normalizar($(this).find("td:nth-child(3)").text());
+
+            $(this).toggle(
+                nombre.includes(texto) || area.includes(texto)
+            );
+        });
+    });
+
+
     // —— Helpers de cálculo ——
     function recalcularFila($fila) {
         const checked = $fila.find('.chk-analisis').is(':checked');
@@ -177,7 +211,6 @@
 
         let $form = $(this);
 
-        // Validar paciente
         const pacienteId = $form.find('select[name="paciente_id"]').val();
         if (!pacienteId) {
             Swal.fire({
@@ -188,7 +221,6 @@
             return;
         }
 
-        // Construir items
         let items = [];
         $('#tabla-analisis-proforma tbody tr').each(function() {
             const $fila    = $(this);
@@ -232,7 +264,6 @@
                         window.location.href = "{{ route('proformas.index') }}";
                     });
 
-                    // Reset del formulario y totales
                     $form[0].reset();
                     $('#total-proforma').text('0.00');
                     $('#tabla-analisis-proforma tbody tr').each(function() {
@@ -244,21 +275,14 @@
             error: function(xhr) {
                 console.error(xhr.responseText);
 
-                if (xhr.status === 422) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Errores de validación',
-                        text: 'Revisa los campos del formulario.'
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Ocurrió un error al guardar la proforma.'
-                    });
-                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al guardar la proforma.'
+                });
             }
         });
     });
+
 </script>
 @endpush

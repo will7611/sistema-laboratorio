@@ -37,8 +37,11 @@ Route::group(['middleware' => ['auth']], function() {
     // Proformas
     Route::resource('proformas', ProformaController::class);
     Route::post('proformas/{proforma}/aceptar', [ProformaController::class, 'aceptar'])->name('proformas.aceptar');
+   // Route::get('/proformas/{id}/detalles', [ProformaController::class, 'detalles'])->name('detallesAjax');
 
-    // Órdenes
+
+
+        // Órdenes
     Route::resource('ordenes', OrdersController::class)->only(['index', 'show']);
 
     // --- RESULTADOS (Aquí está lo importante para n8n) ---

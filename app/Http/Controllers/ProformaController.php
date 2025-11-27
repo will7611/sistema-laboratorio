@@ -11,6 +11,7 @@ use App\Models\Result;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class ProformaController extends Controller
 {
@@ -20,7 +21,8 @@ class ProformaController extends Controller
     public function index()
     {
         $proformas = Proforma::all();
-        return view('gestion.proformas.index', compact('proformas'));
+        $detalles = Proforma::all();
+        return view('gestion.proformas.index', compact('proformas', 'detalles'));
     }
 
     /**
@@ -112,10 +114,16 @@ class ProformaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Proforma $proforma)
+     public function show($id)
     {
-        $proforma->load('paciente', 'detalles.analisis', 'orden');
-        return view('gestion.proformas.show', compact('proforma'));
+        
+      $proforma = Proforma::with(['paciente', 'detalles.analisis'])->find($id);
+
+    if (!$proforma) {
+        return redirect()->route('proformas.index')->with('error', 'Proforma no encontrada');
+    }
+
+    return view('gestion.proformas.show', compact('proforma'));
     }
 
     /**
@@ -189,6 +197,37 @@ class ProformaController extends Controller
 
             return back()->withErrors('Error al aceptar la proforma: ' . $e->getMessage());
         }
+    }
+   public function detalles($id)
+    {
+        $proforma = Proforma::with(['paciente', 'detalles.analisis', 'orden'])->find($id);
+
+        if (!$proforma) {
+            return response()->json(['error' => 'Proforma no encontrada'], 404);
+        }
+
+        return view('gestion.proformas.detalles-ajax', compact('proforma'));
+    }  
+    
+    
+    public function detallesAjax($id)
+    {
+        // Cargar la proforma con paciente y detalles + análisis
+        $proforma = Proforma::with(['paciente', 'detalles.analisis'])->find($id);
+
+        if (!$proforma) {
+            // Retornar error si no se encuentra la proforma
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Proforma no encontrada.'
+            ], 404);
+        }
+
+        // Asegurarnos de que 'detalles' sea un array aunque esté vacío
+        $detalles = $proforma->detalles ?? collect();
+
+        // Retornar vista parcial con los datos
+        return view('gestion.proformas.detalles-ajax', compact('proforma', 'detalles'));
     }
     /**
      * Update the specified resource in storage.

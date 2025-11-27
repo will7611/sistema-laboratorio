@@ -39,7 +39,7 @@
                                         <div class="position-relative h-100 d-flex flex-column">
                                             <div class="mb-4">
                                                 <a href="index" class="d-block">
-                                                    <img src="http://localhost/creative2/public/assets/images/logo-light.png" alt="" height="18">
+                                                    <img src="{{asset('assets/images/logo-light.png')}}" alt="" height="18">
                                                 </a>
                                             </div>
                                             <div class="mt-auto">

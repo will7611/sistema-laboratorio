@@ -40,6 +40,7 @@
                                 <th>Estado</th>
                                 <th>Orden</th>
                                 <th>Acciones</th>
+                                <th>otras</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -60,6 +61,8 @@
                                     @endif
                                 </td>
                                 <td>
+                                  
+
                                     @if(!$proforma->orden)
                                         <button type="button"
                                                 class="btn btn-sm btn-success btn-aceptar-proforma"
@@ -72,7 +75,13 @@
                                         </a>
                                     @endif
                                 </td>
+                                <td>
+                                     <a href="{{ route('proformas.show', $proforma->id) }}" class="btn btn-sm btn-primary">
+                    Ver Detalles
+                </a>
+                                </td>
                             </tr>
+                            
                             @endforeach
                         </tbody>
                     </table> 
@@ -81,6 +90,8 @@
         </div>
     </div>
 </div>
+
+
 @endsection
 
 @push('scripts')
@@ -157,5 +168,6 @@
             });
         });
     });
+
 </script>
 @endpush

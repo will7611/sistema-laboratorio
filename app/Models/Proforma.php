@@ -21,7 +21,7 @@ class Proforma extends Model
 
     public function detalles()
     {
-        return $this->hasMany(ProformaDetail::class);
+        return $this->hasMany(ProformaDetail::class, 'proforma_id');
     }
 
     public function orden()
