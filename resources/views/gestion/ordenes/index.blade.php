@@ -33,7 +33,7 @@
                                 <th>#</th>
                                 <th>Paciente</th>
                                 <th>Fecha creación</th>
-                                <th>Estado orden</th>
+                                <th>Estado</th>
                                 <th>Resultado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -45,6 +45,7 @@
                                     <td>{{ $orden->paciente->name }} {{ $orden->paciente->last_name }}</td>
                                     <td>{{ $orden->creation_date }}</td>
                                     <td>{{ ucfirst($orden->status) }}</td>
+
                                     <td>
                                         @if($orden->resultado && $orden->resultado->pdf_path)
                                             <span class="badge bg-success">PDF cargado</span>
@@ -52,19 +53,30 @@
                                             <span class="badge bg-secondary">Sin PDF</span>
                                         @endif
                                     </td>
+
                                     <td>
                                         @if($orden->resultado && $orden->resultado->pdf_path)
-                                            <a href="{{ $orden->resultado->url_pdf }}" target="_blank" class="btn btn-sm btn-info">
+                                            
+                                            <a href="{{ $orden->resultado->url_pdf }}" 
+                                               target="_blank" class="btn btn-sm btn-info">
                                                 Ver PDF
                                             </a>
+
                                             <button class="btn btn-sm btn-success btn-enviar-correo" 
                                                     data-resultado-id="{{ $orden->resultado->id }}">
-                                                Enviar a correo & WhatsApp
+                                                Enviar WhatsApp/Email
                                             </button>
+
                                         @else
-                                            <span class="text-muted">Sin PDF</span>
+                                            {{-- BOTÓN CARGAR PDF --}}
+                                            <button class="btn btn-sm btn-primary btn-cargar-pdf"
+                                                    data-resultado-id="{{ $orden->resultado->id ?? 0 }}"
+                                                    data-orden-id="{{ $orden->id }}">
+                                                Cargar PDF
+                                            </button>
                                         @endif
                                     </td>
+
                                 </tr>
                             @endforeach
                         </tbody>
@@ -76,68 +88,106 @@
 </div>
 @endsection
 
+
+{{-- Modal para subir PDF --}}
+<div class="modal fade" id="modalSubirPDF" tabindex="-1">
+    <div class="modal-dialog">
+        <form id="formSubirPDF" enctype="multipart/form-data">
+            @csrf
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Subir PDF</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <input type="hidden" name="resultado_id" id="resultado_id">
+                    <input type="hidden" name="orden_id" id="orden_id">
+
+                    <label>Seleccionar PDF</label>
+                    <input type="file" name="pdf" class="form-control" accept="application/pdf" required>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary">Subir PDF</button>
+                </div>
+
+            </div>
+
+        </form>
+    </div>
+</div>
+
+
 @push('scripts')
 <script>
-    $(document).ready(function() {
+$(document).ready(function(){
 
-        // Inicializar DataTables
-        if ($.fn.DataTable) {
-            $('#tabla-ordenes').DataTable({
-                "columnDefs": [
-                    { "orderable": false, "targets": [4, 5] } // columnas Resultado y Acciones
-                ]
-            });
-        }
+    // abrir modal
+    $(document).on('click', '.btn-cargar-pdf', function(){
+        $('#resultado_id').val($(this).data('resultado-id'));
+        $('#orden_id').val($(this).data('orden-id'));
+        $('#modalSubirPDF').modal('show');
+    });
 
-        // Configurar AJAX con CSRF
-        $.ajaxSetup({
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+    // subir PDF
+    $('#formSubirPDF').on('submit', function(e){
+        e.preventDefault();
+
+        let resultadoId = $('#resultado_id').val();
+        let formData = new FormData(this);
+
+        Swal.fire({
+            title: 'Subiendo PDF...',
+            didOpen: () => Swal.showLoading(),
+            allowOutsideClick: false
         });
 
-        // Evento click en botón enviar correo & WhatsApp
-        $(document).on('click', '.btn-enviar-correo', function() {
-            const resultadoId = $(this).data('resultado-id');
-            const $btn = $(this);
+        $.ajax({
+            url: `/resultados/${resultadoId}/upload`,
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
 
-            Swal.fire({
-                title: 'Enviando...',
-                text: 'Por favor espera',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
+            success: function(res){
+                Swal.close();
+                Swal.fire('Éxito', res.message, 'success')
+                    .then(() => location.reload());
+            },
 
-            $.ajax({
-                url: '/resultados/' + resultadoId + '/send', // asegúrate que la ruta exista
-                type: 'POST',
-                success: function(response) {
-                    Swal.close();
-
-                    if(response.success){
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Éxito',
-                            text: response.message
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Atención',
-                            text: response.message
-                        });
-                    }
-                },
-                error: function(xhr) {
-                    Swal.close();
-                    let msg = xhr.responseJSON?.message || 'Error al enviar correo y WhatsApp.';
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: msg
-                    });
-                }
-            });
+            error: function(xhr){
+                Swal.close();
+                Swal.fire('Error', xhr.responseJSON?.message || 'Error al subir PDF', 'error');
+            }
         });
 
     });
+
+
+    // Enviar correo & WhatsApp
+    $(document).on('click', '.btn-enviar-correo', function(){
+        const id = $(this).data('resultado-id');
+
+        Swal.fire({
+            title: 'Enviando...',
+            didOpen: () => Swal.showLoading(),
+            allowOutsideClick: false
+        });
+
+        $.post(`/resultados/${id}/send`, {}, function(res){
+            Swal.close();
+            Swal.fire('Éxito', res.message, 'success');
+        }).fail(function(){
+            Swal.close();
+            Swal.fire('Error', 'No se pudo enviar.', 'error');
+        });
+    });
+
+});
 </script>
 @endpush
