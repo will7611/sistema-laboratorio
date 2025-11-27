@@ -30,4 +30,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Subir PDF desde n8n
     Route::post('/resultados/{resultado}/upload', [App\Http\Controllers\ResultController::class, 'uploadPdf']);
+
+    // Ruta pública para n8n (GET)
+    Route::get('/ordenes-publicas', function () {
+        return Orders::with('paciente', 'resultado')->get();
+    });
+});
+Route::get('/ordenes-publicas', function () {
+    return Orders::with('paciente', 'resultado')->get();
 });

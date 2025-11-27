@@ -34,5 +34,9 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'n8n' => [
+        'resultados_webhook' => env('N8N_RESULTADOS_WEBHOOK'),
+        'sanctum_token'      => env('N8N_SANCTUM_TOKEN'),
+    ],
 
 ];

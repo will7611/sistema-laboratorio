@@ -15,8 +15,8 @@ class OrdersController extends Controller
         $ordenes = Orders::with('paciente', 'proforma', 'resultado')
             ->orderBy('id', 'desc')
             ->get();
-
-        return view('gestion.ordenes.index', compact('ordenes'));
+         $n8nToken = env('N8N_SANCTUM_TOKEN'); 
+        return view('gestion.ordenes.index', compact('ordenes', 'n8nToken'));
     }
 
     /**

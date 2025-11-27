@@ -117,7 +117,7 @@
                                 <a href="#" class="nav-link">Nueva Orden</a>
                             </li>
                             <li class="nav-item">
-                                <a href="#" class="nav-link">Lista Ordenes</a>
+                                <a href="{{route('ordenes.index')}}" class="nav-link">Lista Ordenes</a>
                             </li>
                         </ul>
                     </div>

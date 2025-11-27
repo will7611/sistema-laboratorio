@@ -6,6 +6,7 @@ use App\Models\Notification;
 use App\Models\Result;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ResultadoPdfMail;
+use App\Models\Orders;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,30 +15,31 @@ use Illuminate\Support\Facades\Http;
 class ResultController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Mostrar formulario para subir PDF
      */
-    public function index()
-    {
-        
-    }
-     public function uploadForm(Result $resultado)
+    public function uploadForm(Result $resultado)
     {
         $resultado->load('orden.paciente');
-
-        return view('gestion.resultados.upload', compact('resultado'));
+        
+        return view('gestion.resultados.upload', compact('resultado', ));
     }
-     public function uploadPdf(Request $request, Result $resultado)
+
+    /**
+     * Subir PDF y enviar datos a n8n
+     */
+    public function uploadPdf(Request $request, Result $resultado)
     {
         $request->validate([
             'pdf' => 'required|file|mimes:pdf|max:5120', // 5MB
         ]);
 
         try {
-            // Guardar PDF
+            // Eliminar PDF antiguo si existe
             if ($resultado->pdf_path) {
                 Storage::disk('public')->delete($resultado->pdf_path);
             }
 
+            // Guardar nuevo PDF
             $path = $request->file('pdf')->store('resultados', 'public');
 
             $resultado->update([
@@ -47,27 +49,27 @@ class ResultController extends Controller
                 'status'         => 'validado',
             ]);
 
-            // Llamar a n8n (ejemplo)
+            // Preparar payload para n8n
             $orden    = $resultado->orden()->with('paciente')->first();
             $paciente = $orden->paciente;
 
-            $webhookUrl = config('services.n8n.resultados_webhook'); 
-            // config/services.php -> 'n8n' => ['resultados_webhook' => 'https://tu-servidor/webhook/resultados']
-
             $payload = [
-                'result_id'   => $resultado->id,
-                'paciente'    => [
-                    'nombre'  => $paciente->name,
-                    'apellido'=> $paciente->last_name,
-                    'email'   => $paciente->email,
-                    'telefono'=> $paciente->phone,
+                'resultado_id' => $resultado->id,
+                'orden_id'     => $orden->id,
+                'paciente'     => [
+                    'nombre'   => $paciente->name,
+                    'apellido' => $paciente->last_name,
+                    'email'    => $paciente->email,
+                    'telefono' => $paciente->phone,
                 ],
-                'orden_id'    => $orden->id,
-                'pdf_url'     => $resultado->url_pdf,
+                'pdf_url' => $resultado->url_pdf,
+                'estado'  => $resultado->status,
             ];
 
+            // Enviar a n8n
+            $webhookUrl = config('services.n8n.resultados_webhook');
             $estadoNotificacion = 'pendiente';
-            $mensajeError       = null;
+            $mensajeError = null;
 
             try {
                 if ($webhookUrl) {
@@ -75,16 +77,17 @@ class ResultController extends Controller
 
                     if ($response->successful()) {
                         $estadoNotificacion = 'enviada';
+                        $resultado->update(['status' => 'enviado']);
                     } else {
                         $estadoNotificacion = 'error';
-                        $mensajeError       = $response->body();
+                        $mensajeError = $response->body();
                     }
                 } else {
                     $estadoNotificacion = 'no_configurado';
                 }
             } catch (\Exception $e) {
                 $estadoNotificacion = 'error';
-                $mensajeError       = $e->getMessage();
+                $mensajeError = $e->getMessage();
             }
 
             // Registrar notificación
@@ -96,10 +99,7 @@ class ResultController extends Controller
                 'message_error'=> $mensajeError,
             ]);
 
-            if ($estadoNotificacion === 'enviada') {
-                $resultado->update(['status' => 'enviado']);
-            }
-
+            // Retornar respuesta
             if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -110,8 +110,8 @@ class ResultController extends Controller
 
             return redirect()->route('ordenes.index')
                 ->with('success', 'PDF subido y notificación enviada (o en proceso).');
-        } catch (\Exception $e) {
 
+        } catch (\Exception $e) {
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -124,177 +124,80 @@ class ResultController extends Controller
         }
     }
 
-    
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
+     * Mostrar resultado
      */
     public function show($id)
     {
-         $resultado = Result::with(['orden.paciente', 'notificaciones'])->findOrFail($id);
-
+        $resultado = Result::with(['orden.paciente', 'notificaciones'])->findOrFail($id);
         return view('gestion.resultados.show', compact('resultado'));
     }
-    // public function sendToN8n($id)
-    // {
-    //     $resultado = Result::with('orden.paciente')->findOrFail($id);
-    //     $paciente  = $resultado->orden->paciente;
 
-    //     $webhookUrl = config('services.n8n.results_webhook');
-
-    //     if (!$webhookUrl) {
-    //         return back()->withErrors('Webhook de n8n no configurado (N8N_RESULTS_WEBHOOK)');
-    //     }
-
-    //     // Datos que se mandan a n8n
-    //     $payload = [
-    //         'result_id'     => $resultado->id,
-    //         'order_id'      => $resultado->order_id,
-    //         'paciente'      => [
-    //             'id'        => $paciente->id,
-    //             'nombre'    => $paciente->name,
-    //             'apellido'  => $paciente->last_name,
-    //             'email'     => $paciente->email,
-    //             'telefono'  => $paciente->phone,
-    //         ],
-    //         'pdf_url'       => $resultado->url_pdf,   // accessor que ya tienes
-    //         'estado'        => $resultado->status,
-    //         'enviado_desde' => 'laravel-laboratorio',
-    //     ];
-
-    //     try {
-    //         $response = Http::post($webhookUrl, $payload);
-
-    //         $ok = $response->successful();
-
-    //         Notification::create([
-    //             'result_id'    => $resultado->id,
-    //             'channel'      => 'email_whatsapp', // o lo que uses
-    //             'send_date'    => Carbon::now(),
-    //             'status'       => $ok ? 'enviado' : 'error',
-    //             'message_error'=> $ok ? null : $response->body(),
-    //         ]);
-
-    //         if ($ok) {
-    //             // Opcional: marcar resultado como "enviado"
-    //             $resultado->update(['status' => 'enviado']);
-
-    //             return back()->with('success', 'Resultados enviados a n8n correctamente.');
-    //         } else {
-    //             return back()->withErrors('Error al enviar a n8n: '.$response->body());
-    //         }
-
-    //     } catch (\Exception $e) {
-    //         Notification::create([
-    //             'result_id'    => $resultado->id,
-    //             'channel'      => 'email_whatsapp',
-    //             'send_date'    => Carbon::now(),
-    //             'status'       => 'error',
-    //             'message_error'=> $e->getMessage(),
-    //         ]);
-
-    //         return back()->withErrors('Excepción al llamar a n8n: '.$e->getMessage());
-    //     }
-    // }
     /**
-     * Show the form for editing the specified resource.
+     * Enviar resultado a n8n, correo y WhatsApp
      */
-
-
     public function sendToN8n($id)
-{
-    $resultado = Result::with('orden.paciente')->findOrFail($id); // correcto: $id es Result
-    $paciente  = $resultado->orden->paciente;
-
-    $webhookUrl = config('services.n8n.results_webhook');
-
-    if (!$webhookUrl) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Webhook de n8n no configurado.'
-        ]);
-    }
-
-    $payload = [
-        'result_id'     => $resultado->id,
-        'order_id'      => $resultado->order_id,
-        'paciente'      => [
-            'id'       => $paciente->id,
-            'nombre'   => $paciente->name,
-            'apellido' => $paciente->last_name,
-            'email'    => $paciente->email,
-            'telefono' => $paciente->phone,
-        ],
-        'pdf_url'       => $resultado->url_pdf,
-        'estado'        => $resultado->status,
-        'enviado_desde' => 'laravel-laboratorio',
-    ];
-
-    try {
-        $response = Http::post($webhookUrl, $payload);
-
-        Notification::create([
-            'result_id'    => $resultado->id,
-            'channel'      => 'email_whatsapp',
-            'send_date'    => Carbon::now(),
-            'status'       => $response->successful() ? 'enviado' : 'error',
-            'message_error'=> $response->successful() ? null : $response->body(),
-        ]);
-
-        return response()->json([
-            'success' => $response->successful(),
-            'message' => $response->successful() ? 'Enviado correctamente a correo y WhatsApp' : 'Error al enviar'
-        ]);
-    } catch (\Exception $e) {
-        Notification::create([
-            'result_id'    => $resultado->id,
-            'channel'      => 'email_whatsapp',
-            'send_date'    => Carbon::now(),
-            'status'       => 'error',
-            'message_error'=> $e->getMessage(),
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Excepción al enviar: ' . $e->getMessage()
-        ]);
-    }
-}
-    public function edit(Result $result)
     {
-        //
+        $resultado = Result::with('orden.paciente')->findOrFail($id);
+        $paciente  = $resultado->orden->paciente;
+
+        $webhookUrl = config('services.n8n.resultados_webhook');
+
+        if (!$webhookUrl) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Webhook de n8n no configurado.'
+            ]);
+        }
+
+        $payload = [
+            'result_id' => $resultado->id,
+            'orden_id'  => $resultado->orden->id,
+            'paciente'  => [
+                'id'       => $paciente->id,
+                'nombre'   => $paciente->name,
+                'apellido' => $paciente->last_name,
+                'email'    => $paciente->email,
+                'telefono' => $paciente->phone,
+            ],
+            'pdf_url' => $resultado->url_pdf,
+            'estado'  => $resultado->status,
+        ];
+
+        try {
+            $response = Http::post($webhookUrl, $payload);
+
+            Notification::create([
+                'result_id'    => $resultado->id,
+                'channel'      => 'email_whatsapp',
+                'send_date'    => Carbon::now(),
+                'status'       => $response->successful() ? 'enviado' : 'error',
+                'message_error'=> $response->successful() ? null : $response->body(),
+            ]);
+
+            return response()->json([
+                'success' => $response->successful(),
+                'message' => $response->successful() ? 'Enviado correctamente a correo y WhatsApp' : 'Error al enviar'
+            ]);
+        } catch (\Exception $e) {
+            Notification::create([
+                'result_id'    => $resultado->id,
+                'channel'      => 'email_whatsapp',
+                'send_date'    => Carbon::now(),
+                'status'       => 'error',
+                'message_error'=> $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Excepción al enviar: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**
-     * Update the specified resource in storage.
+     * Enviar PDF por correo y WhatsApp (opcional)
      */
-    public function update(Request $request, Result $result)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Result $result)
-    {
-        //
-    }
     public function sendPdf($resultadoId)
     {
         $resultado = Result::findOrFail($resultadoId);
@@ -308,13 +211,9 @@ class ResultController extends Controller
             // Enviar correo
             Mail::to($orden->paciente->email)->send(new ResultadoPdfMail($orden, $resultado->pdf_path));
 
-            if(count(Mail::failures()) > 0){
-                return response()->json(['success'=>false, 'message'=>'No se pudo enviar el correo'], 500);
-            }
-
             // Enviar WhatsApp vía n8n
             $client = new \GuzzleHttp\Client();
-            $webhookUrl = 'https://tuservidor-n8n.com/webhook/resultado';
+            $webhookUrl = config('services.n8n.resultados_webhook'); 
             $client->post($webhookUrl, [
                 'json' => [
                     'telefono' => $orden->paciente->telefono,
@@ -326,6 +225,54 @@ class ResultController extends Controller
 
         } catch (\Exception $e) {
             return response()->json(['success'=>false, 'message'=>'Error: '.$e->getMessage()], 500);
+        }
+    }
+    public function enviarAN8n(Result $resultado)
+    {
+        $resultado->load('orden.paciente');
+        $paciente = $resultado->orden->paciente;
+
+        $webhookUrl = config('services.n8n.resultados_webhook');
+        $token      = config('services.n8n.sanctum_token');
+
+        if (!$webhookUrl || !$token) {
+            return response()->json(['success' => false, 'message' => 'Webhook o token no configurado.'], 500);
+        }
+
+        $payload = [
+            'result_id' => $resultado->id,
+            'orden_id'  => $resultado->orden_id,
+            'paciente'  => [
+                'id'       => $paciente->id,
+                'nombre'   => $paciente->name,
+                'apellido' => $paciente->last_name,
+                'email'    => $paciente->email,
+                'telefono' => $paciente->phone,
+            ],
+            'pdf_url'   => $resultado->url_pdf,
+            'estado'    => $resultado->status,
+        ];
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer $token"
+            ])->post($webhookUrl, $payload);
+
+            Notification::create([
+                'result_id'    => $resultado->id,
+                'channel'      => 'email_whatsapp',
+                'send_date'    => now(),
+                'status'       => $response->successful() ? 'enviado' : 'error',
+                'message_error'=> $response->successful() ? null : $response->body(),
+            ]);
+
+            return response()->json([
+                'success' => $response->successful(),
+                'message' => $response->successful() ? 'Enviado a n8n correctamente' : 'Error al enviar a n8n',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }
