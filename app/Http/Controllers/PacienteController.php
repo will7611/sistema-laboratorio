@@ -65,7 +65,7 @@ class PacienteController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdatePacienteRequest $request, Paciente $paciente)
+    public function update(StorePacienteRequest $request, Paciente $paciente)
     {
         try {
             $data = $request->validated();

@@ -60,19 +60,19 @@
                         <table class="table table-bordered align-middle" id="tabla-analisis-proforma">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Seleccionar</th>
+                                    <th class="text-center" style="width: 50px;">Sel.</th>
                                     <th>Análisis</th>
                                     <th>Área</th>
                                     <th>Precio (Bs)</th>
-                                    <th>Cantidad</th>
+                                    <th style="width: 100px;">Cantidad</th>
                                     <th>Subtotal (Bs)</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="tbody-analisis">
                                 @foreach ($analisis as $item)
-                                <tr data-id="{{ $item->id }}">
+                                <tr data-id="{{ $item->id }}" class="fila-analisis">
                                     <td class="text-center">
-                                        <input type="checkbox" class="form-check-input chk-analisis">
+                                        <input type="checkbox" class="form-check-input chk-analisis" style="cursor: pointer;">
                                     </td>
                                     <td>
                                         {{ $item->name }}
@@ -84,11 +84,11 @@
                                             {{ number_format($item->price, 2) }}
                                         </span>
                                     </td>
-                                    <td style="width: 120px;">
-                                        <input type="number" class="form-control input-cantidad" min="1" value="1" disabled>
-                                    </td>
                                     <td>
-                                        <span class="subtotal">0.00</span>
+                                        <input type="number" class="form-control input-cantidad text-center" min="1" value="1" disabled>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <span class="subtotal fw-bold">0.00</span>
                                     </td>
                                 </tr>
                                 @endforeach
@@ -96,14 +96,27 @@
                         </table>
                     </div>
 
+                    {{-- CONTROLES DE PAGINACIÓN --}}
+                    <div class="d-flex justify-content-between align-items-center mt-3 p-2 bg-light rounded">
+                        <span id="info-paginacion" class="text-muted fw-bold small">Cargando análisis...</span>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" id="btn-prev" disabled>
+                                <i class="bx bx-chevron-left"></i> Anterior
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-next" disabled>
+                                Siguiente <i class="bx bx-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
                     {{-- TOTAL --}}
                     <div class="row mt-4">
                         <div class="col-md-4 offset-md-8">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h5>Total:</h5>
-                                <h4 class="mb-0">
-                                    <span id="total-proforma">0.00</span> Bs
-                                </h4>
+                            <div class="d-flex justify-content-between align-items-center p-3 border rounded bg-soft-primary">
+                                <h5 class="mb-0">Total Estimado:</h5>
+                                <h3 class="mb-0 text-primary">
+                                    <span id="total-proforma">0.00</span> <small class="fs-6 text-muted">Bs</small>
+                                </h3>
                             </div>
                         </div>
                     </div>
@@ -111,8 +124,10 @@
                     {{-- BOTONES --}}
                     <div class="row mt-4">
                         <div class="col-12 text-end">
-                            <a href="{{ route('proformas.index') }}" class="btn btn-light">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar Proforma</button>
+                            <a href="{{ route('proformas.index') }}" class="btn btn-light me-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bx bx-save"></i> Guardar Proforma
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -122,35 +137,88 @@
 </div>
 @endsection
 
-
-
 @push('scripts')
 <script>
+    // --- CONFIGURACIÓN PAGINACIÓN ---
+    const FILAS_POR_PAGINA = 10;
+    let paginaActual = 1;
+    let filasVisibles = []; 
 
-    // —— Función para quitar acentos y normalizar texto ——
+    $(document).ready(function() {
+        // Inicializar: guardar todas las filas como visibles al principio
+        filasVisibles = $('.fila-analisis').toArray();
+        actualizarTabla();
+    });
+
+    // —— Función para normalizar texto (quita acentos) ——
     function normalizar(texto) {
         return texto
             .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") 
+            .replace(/[\u0300-\u036f]/g, "")
             .toLowerCase();
     }
 
-    // —— Buscador de análisis ——
-    $(document).on('input', '#buscar-analisis', function () {
-        const texto = normalizar($(this).val());
+    // —— Lógica de Paginación y Renderizado ——
+    function actualizarTabla() {
+        const totalFilas = filasVisibles.length;
+        const totalPaginas = Math.ceil(totalFilas / FILAS_POR_PAGINA);
 
-        $("#tabla-analisis-proforma tbody tr").each(function () {
-            const nombre = normalizar($(this).find("td:nth-child(2)").text());
-            const area   = normalizar($(this).find("td:nth-child(3)").text());
+        if (paginaActual < 1) paginaActual = 1;
+        if (paginaActual > totalPaginas && totalPaginas > 0) paginaActual = totalPaginas;
 
-            $(this).toggle(
-                nombre.includes(texto) || area.includes(texto)
-            );
-        });
+        // Ocultar todas primero
+        $('.fila-analisis').hide();
+
+        if (totalFilas > 0) {
+            const inicio = (paginaActual - 1) * FILAS_POR_PAGINA;
+            const fin = inicio + FILAS_POR_PAGINA;
+            
+            // Mostrar solo las de esta página
+            const filasA_Mostrar = filasVisibles.slice(inicio, fin);
+            $(filasA_Mostrar).show();
+
+            const finReal = (fin > totalFilas) ? totalFilas : fin;
+            $('#info-paginacion').text(`Mostrando ${inicio + 1}-${finReal} de ${totalFilas} análisis`);
+        } else {
+            $('#info-paginacion').text('No se encontraron resultados');
+        }
+
+        // Estado botones
+        $('#btn-prev').prop('disabled', paginaActual === 1 || totalFilas === 0);
+        $('#btn-next').prop('disabled', paginaActual >= totalPaginas || totalFilas === 0);
+    }
+
+    // —— Eventos Botones Paginación ——
+    $('#btn-prev').click(function() {
+        if (paginaActual > 1) {
+            paginaActual--;
+            actualizarTabla();
+        }
     });
 
+    $('#btn-next').click(function() {
+        const totalPaginas = Math.ceil(filasVisibles.length / FILAS_POR_PAGINA);
+        if (paginaActual < totalPaginas) {
+            paginaActual++;
+            actualizarTabla();
+        }
+    });
 
-    // —— Helpers de cálculo ——
+    // —— Buscador ——
+    $(document).on('input', '#buscar-analisis', function () {
+        const texto = normalizar($(this).val());
+        
+        filasVisibles = $('.fila-analisis').filter(function() {
+            const nombre = normalizar($(this).find("td:nth-child(2)").text());
+            const area   = normalizar($(this).find("td:nth-child(3)").text());
+            return nombre.includes(texto) || area.includes(texto);
+        }).toArray();
+
+        paginaActual = 1;
+        actualizarTabla();
+    });
+
+    // —— Cálculos de Subtotal y Total ——
     function recalcularFila($fila) {
         const checked = $fila.find('.chk-analisis').is(':checked');
         const precio  = parseFloat($fila.find('.precio').data('precio')) || 0;
@@ -159,10 +227,12 @@
         if (!checked) {
             $inputCantidad.prop('disabled', true);
             $fila.find('.subtotal').text('0.00');
+            $fila.removeClass('table-active'); // Quitar resaltado
             return;
         }
 
         $inputCantidad.prop('disabled', false);
+        $fila.addClass('table-active'); // Resaltar fila seleccionada
 
         let cantidad = parseInt($inputCantidad.val());
         if (isNaN(cantidad) || cantidad < 1) {
@@ -176,7 +246,8 @@
 
     function recalcularTotal() {
         let total = 0;
-        $('#tabla-analisis-proforma tbody tr').each(function() {
+        // Iteramos sobre TODAS las filas (incluso las ocultas por paginación)
+        $('.fila-analisis').each(function() {
             const sub = parseFloat($(this).find('.subtotal').text());
             if (!isNaN(sub)) {
                 total += sub;
@@ -185,7 +256,7 @@
         $('#total-proforma').text(total.toFixed(2));
     }
 
-    // —— Eventos de selección/cantidad ——
+    // —— Eventos Inputs ——
     $(document).on('change', '.chk-analisis', function() {
         const $fila = $(this).closest('tr');
         recalcularFila($fila);
@@ -198,35 +269,30 @@
         recalcularTotal();
     });
 
-    // —— AJAX setup ——
+    // —— AJAX Setup ——
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         }
     });
 
-    // —— Envío del formulario por AJAX ——
+    // —— Envío Formulario ——
     $('#form-proforma').on('submit', function(e) {
         e.preventDefault();
-
         let $form = $(this);
 
+        // Validar Paciente
         const pacienteId = $form.find('select[name="paciente_id"]').val();
         if (!pacienteId) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Atención',
-                text: 'Debes seleccionar un paciente.'
-            });
+            Swal.fire({ icon: 'warning', title: 'Falta Información', text: 'Por favor seleccione un paciente.' });
             return;
         }
 
+        // Recolectar Items Seleccionados (de todas las páginas)
         let items = [];
-        $('#tabla-analisis-proforma tbody tr').each(function() {
-            const $fila    = $(this);
-            const checked  = $fila.find('.chk-analisis').is(':checked');
-
-            if (checked) {
+        $('.fila-analisis').each(function() {
+            const $fila = $(this);
+            if ($fila.find('.chk-analisis').is(':checked')) {
                 items.push({
                     analysis_id: $fila.find('.analisis-id').val(),
                     cantidad:    $fila.find('.input-cantidad').val()
@@ -235,54 +301,37 @@
         });
 
         if (items.length === 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Atención',
-                text: 'Debes seleccionar al menos un análisis.'
-            });
+            Swal.fire({ icon: 'warning', title: 'Sin Análisis', text: 'Seleccione al menos un análisis para crear la proforma.' });
             return;
         }
 
-        const data = {
-            paciente_id: pacienteId,
-            items: items
-        };
-
+        // Enviar
         $.ajax({
             url: $form.attr('action'),
             method: 'POST',
-            data: data,
+            data: { paciente_id: pacienteId, items: items },
+            beforeSend: function() {
+                $('button[type="submit"]').prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Guardando...');
+            },
             success: function(response) {
                 if (response.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Proforma creada',
-                        text: response.message || 'La proforma se guardó correctamente.',
+                        title: '¡Éxito!',
+                        text: 'Proforma guardada correctamente',
                         timer: 2000,
                         showConfirmButton: false
                     }).then(() => {
                         window.location.href = "{{ route('proformas.index') }}";
                     });
-
-                    $form[0].reset();
-                    $('#total-proforma').text('0.00');
-                    $('#tabla-analisis-proforma tbody tr').each(function() {
-                        $(this).find('.subtotal').text('0.00');
-                        $(this).find('.input-cantidad').prop('disabled', true);
-                    });
                 }
             },
             error: function(xhr) {
+                $('button[type="submit"]').prop('disabled', false).html('<i class="bx bx-save"></i> Guardar Proforma');
                 console.error(xhr.responseText);
-
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Ocurrió un error al guardar la proforma.'
-                });
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al guardar la proforma.' });
             }
         });
     });
-
 </script>
 @endpush

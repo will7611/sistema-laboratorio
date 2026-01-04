@@ -4,7 +4,7 @@
     <div class="modal-dialog modal-xl">
     <div class="modal-content">
     <div class="modal-header">
-    <h5 class="modal-title" id="nuevoCliente">Nuevo Usuario</h5>
+    <h5 class="modal-title" id="nuevoUsuario">Nuevo Usuario</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body">
@@ -21,7 +21,10 @@
         <div class="col-xxl-6">
             <div>
                 <label for="firstName" class="form-label">CI</label>
-                <input type="text" class="form-control" name="ci" placeholder="Introducir Cedula de identidad">
+                <input type="text" class="form-control  @error('ci') is-invalid @enderror" name="ci" value="{{ old('ci') }}" placeholder="Ej: 12345678 o 12345678-1B">
+                 @error('ci')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
         </div><!--end col-->
         <div class="col-lg-6">
@@ -86,6 +89,18 @@
     </div>
     </div>
     </div>
+
+@if ($errors->any())
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var el = document.getElementById('nuevoUsuario');
+  if (el) {
+    var modal = new bootstrap.Modal(el);
+    modal.show();
+  }
+});
+</script>
+@endif
 {{-- @extends('layouts.app')
 
 @section('content')

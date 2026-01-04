@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Paciente extends Model
 {
@@ -10,12 +11,11 @@ class Paciente extends Model
         'name',
         'last_name',
         'ci',
-        'phone',
         'birth_date',
-        'age',
+        'phone',
         'email',
         'address',
-        'status'
+        'status',
     ];
     public function proformas()
     {
@@ -30,6 +30,16 @@ class Paciente extends Model
     public function getNombreCompletoAttribute()
     {
         return "{$this->name} {$this->last_name}";
+    }
+    protected $casts = [
+        'birth_date' => 'date',
+        'status' => 'integer',
+    ];
+
+    // Edad calculada (no se guarda en DB)
+    public function getAgeAttribute()
+    {
+        return $this->birth_date ? Carbon::parse($this->birth_date)->age : null;
     }
 
 }

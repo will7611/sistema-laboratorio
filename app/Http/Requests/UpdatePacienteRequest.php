@@ -24,7 +24,7 @@ class UpdatePacienteRequest extends FormRequest
         return [
             'name' => 'required|max:100',
             'last_name' => 'required|max:100',
-            'ci' => 'required|max:12',
+            'ci' => 'required|max:12|uniqued',
             'birth_date' => 'nullable|date',
             'age'=> 'nullable|integer',
             'phone' => 'required|max:18',

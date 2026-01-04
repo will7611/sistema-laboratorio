@@ -15,13 +15,20 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('last_name');
-            $table->string('ci')->unique();
+
+            // CI: guardar normalizado (ej: 12345678 o 12345678-1B)
+            $table->string('ci', 20)->unique();
+
             $table->date('birth_date')->nullable();
-            $table->integer('age')->nullable();
-            $table->string('phone')->nullable();
+
+            $table->string('phone', 30)->nullable();
+
+            // Email opcional pero único cuando existe (Postgres permite varios NULL en UNIQUE)
             $table->string('email')->nullable()->unique();
+
             $table->string('address')->nullable();
-            $table->integer('status')->default(1);
+
+            $table->unsignedSmallInteger('status')->default(1);
             $table->timestamps();
         });
     }
