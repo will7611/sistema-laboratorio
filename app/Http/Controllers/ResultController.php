@@ -2,102 +2,159 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Result;
 use App\Models\Notification;
+use App\Models\Result;
+use App\Models\Orders;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class ResultController extends Controller
 {
     /**
-     * Procesa la subida del PDF (Desarrollo)
+     * Muestra el formulario (modal o vista) para subir PDF.
+     */
+    public function uploadForm(Result $resultado)
+    {
+        $resultado->load('orden.paciente');
+        return view('gestion.resultados.upload', compact('resultado'));
+    }
+
+    /**
+     * Sube el PDF, lo guarda y dispara la notificación a n8n.
      */
     public function uploadPdf(Request $request, Result $resultado)
     {
-        // Validar hasta 200MB (204800 KB)
         $request->validate([
-            'pdf' => 'required|file|mimes:pdf|max:204800',
+            'pdf' => 'required|file|mimes:pdf|max:5120', // Máx 5MB
         ]);
 
         try {
-            // 1. RESPALDO: Guardar archivo en el disco local 'public'
+            // 1. Eliminar PDF antiguo si existe
             if ($resultado->pdf_path) {
                 Storage::disk('public')->delete($resultado->pdf_path);
             }
 
+            // 2. Guardar nuevo PDF
             $path = $request->file('pdf')->store('resultados', 'public');
+
+            // 3. Generar URL pública absoluta (IMPORTANTE para n8n)
+            // Asegúrate que APP_URL en .env sea correcto (ej: https://tusitio.com)
             $urlPdf = asset('storage/' . $path);
 
-            // 2. ACTUALIZAR BASE DE DATOS
+            // 4. Actualizar BD
             $resultado->update([
                 'pdf_path'       => $path,
-                'url_pdf'        => $urlPdf,
+                'url_pdf'        => $urlPdf, // Guardamos la URL generada
                 'result_date'    => Carbon::now(),
+                'validated_date' => Carbon::now(),
                 'status'         => 'validado',
             ]);
 
-            // 3. COMUNICACIÓN CON N8N (Con timeout para no congelar)
-            $enviado = $this->enviarAN8n($resultado);
+            // 5. Enviar a n8n
+            $envioExitoso = $this->enviarPayloadAN8n($resultado);
 
-            return response()->json([
-                'success' => true,
-                'message' => $enviado 
-                    ? 'Archivo respaldado y enviado a n8n.' 
-                    : 'Archivo guardado localmente, pero n8n no respondió a tiempo.',
-                'url' => $urlPdf
-            ]);
+            $mensaje = $envioExitoso 
+                ? 'PDF subido y enviado a n8n correctamente.' 
+                : 'PDF subido, pero n8n no respondió (se guardó notificación de error).';
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success'   => true,
+                    'message'   => $mensaje,
+                    'resultado' => $resultado->fresh(),
+                ]);
+            }
+
+            return redirect()->route('ordenes.index')->with('success', $mensaje);
 
         } catch (\Exception $e) {
-            Log::error("Error en subida local: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al subir PDF: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->withErrors('Error: ' . $e->getMessage());
         }
     }
 
     /**
-     * Reenvío manual (Botón en la tabla)
+     * Reenvío manual desde el botón "Enviar WhatsApp/Email".
      */
     public function sendToN8n($id)
     {
-        $resultado = Result::findOrFail($id);
-        
+        $resultado = Result::with('orden.paciente')->findOrFail($id);
+
         if (!$resultado->pdf_path) {
-            return response()->json(['success' => false, 'message' => 'No hay PDF cargado.'], 422);
+            return response()->json(['success' => false, 'message' => 'No hay PDF cargado para enviar.'], 422);
         }
 
-        $exito = $this->enviarAN8n($resultado);
+        $exito = $this->enviarPayloadAN8n($resultado);
 
         return response()->json([
             'success' => $exito,
-            'message' => $exito ? 'Enviado correctamente.' : 'Error al conectar con n8n.'
+            'message' => $exito ? 'Enviado a n8n correctamente.' : 'Error al enviar a n8n.'
         ]);
     }
 
     /**
-     * Lógica central de envío a n8n
+     * MÉTODO PRIVADO: Centraliza la lógica de llamar a n8n.
      */
-    private function enviarAN8n(Result $resultado)
+    private function enviarPayloadAN8n(Result $resultado)
     {
-        $webhookUrl = config('services.n8n.resultados_webhook'); 
-        if (!$webhookUrl) return false;
-// Obtenemos los datos del paciente desde la relación
+        $resultado->load('orden.paciente');
         $paciente = $resultado->orden->paciente;
-        try {
-            // Timeout de 10 segundos para pruebas locales
-            $response = Http::timeout(10)->post($webhookUrl, [
-                'test_mode'    => true,
-                'resultado_id' => $resultado->id,
-                'paciente'     => $resultado->orden->paciente->name . ' ' . $resultado->orden->paciente->last_name,
-                'pdf_url'      => $resultado->url_pdf,
-                         'email'        => $paciente->email,      // <--- AHORA SÍ SE ENVÍA EL EMAIL
-                'telefono'     => $paciente->phone,      // <--- AÑADIMOS TELÉFONO PARA WHATSAPP
-            ]);
+        
+        // URL del Webhook de n8n definida en .env
+        $webhookUrl = config('services.n8n.resultados_webhook'); 
 
-            return $response->successful();
-        } catch (\Exception $e) {
+        if (!$webhookUrl) {
+            $this->registrarNotificacion($resultado->id, 'error', 'Webhook n8n no configurado en .env');
             return false;
         }
+
+        // Datos que enviaremos a n8n
+        $payload = [
+            'resultado_id' => $resultado->id,
+            'orden_id'     => $resultado->orden->id,
+            'paciente'     => [
+                'nombre'   => $paciente->name,
+                'apellido' => $paciente->last_name,
+                'email'    => $paciente->email,
+                'telefono' => $paciente->phone, // Ej: 59170000000
+            ],
+            'pdf_url'      => $resultado->url_pdf, // URL pública
+            'estado'       => $resultado->status,
+        ];
+
+        try {
+            // Hacemos la petición POST a n8n
+            $response = Http::post($webhookUrl, $payload);
+
+            if ($response->successful()) {
+                $resultado->update(['status' => 'enviado']);
+                $this->registrarNotificacion($resultado->id, 'enviado', null);
+                return true;
+            } else {
+                $this->registrarNotificacion($resultado->id, 'error', 'n8n error: ' . $response->body());
+                return false;
+            }
+        } catch (\Exception $e) {
+            $this->registrarNotificacion($resultado->id, 'error', 'Exception: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function registrarNotificacion($resultadoId, $status, $error)
+    {
+        Notification::create([
+            'result_id'     => $resultadoId,
+            'channel'       => 'n8n',
+            'send_date'     => Carbon::now(),
+            'status'        => $status,
+            'message_error' => $error,
+        ]);
     }
 }
