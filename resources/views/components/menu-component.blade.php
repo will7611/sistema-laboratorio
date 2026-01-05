@@ -77,12 +77,7 @@
                                             <a href="{{route('pacientes.index')}}" class="nav-link">Pacientes</a>
                                         </li>
                                         
-                                        {{-- <li class="nav-item">
-                                            <a href="#" class="nav-link">Proveedores</a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="#" class="nav-link">Personal</a>
-                                        </li> --}}
+                                    
                                     </ul>
                                 </div>
                             </li>
@@ -108,7 +103,7 @@
                     <div class="collapse menu-dropdown" id="sidebarLanding">
                         <ul class="nav nav-sm flex-column">
                             <li class="nav-item">
-                                <a href="{{route('proformas.index')}}" class="nav-link" data-key="t-one-page"> Nueva Proforma </a>
+                                <a href="{{route('proformas.create')}}" class="nav-link" data-key="t-one-page"> Nueva Proforma </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{{route('proformas.index')}}" class="nav-link" data-key="t-one-page"> Ver Proformas </a>

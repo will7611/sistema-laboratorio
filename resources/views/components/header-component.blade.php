@@ -2,7 +2,7 @@
 <header id="page-topbar">
     <div class="layout-width">
         <div class="navbar-header">
-            <div class="d-flex">
+            <div class="d-flex flex-grow-1 align-items-center">
                 <!-- LOGO -->
                 <div class="navbar-brand-box horizontal-logo">
                     <a href="index" class="logo logo-dark">
@@ -30,10 +30,19 @@
                         <span></span>
                     </span>
                 </button>
+
+              
+                       <!-- TÍTULO CENTRADO Y MEJORADO -->
+                <div class="ms-auto d-none d-md-block me-5 pe-xl-5"> 
+                    <div class="badge text-info fw-bold text-warp fs-1 ">LABORATORIO CLÍNICO SANTIAGO</div>
+            
+                </div>
+                   
+               
             </div>
 
             <div class="d-flex align-items-center">
-
+               
                 <div class="ms-1 header-item d-none d-sm-flex">
                     <button type="button" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle"
                         data-toggle="fullscreen">

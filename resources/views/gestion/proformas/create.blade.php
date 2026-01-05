@@ -29,9 +29,9 @@
             <div class="card-body">
                 <form id="form-proforma" action="{{ route('proformas.store') }}" method="POST">
                     @csrf
-
-                    {{-- PACIENTE --}}
                     <div class="row mb-4">
+                        {{-- PACIENTE --}}
+                    
                         <div class="col-md-6">
                             <label class="form-label">Paciente</label>
                             <select name="paciente_id" class="form-select" required>
@@ -43,15 +43,17 @@
                                 @endforeach
                             </select>
                         </div>
-                    </div>
+                   
 
                     {{-- BUSCADOR --}}
-                    <div class="row mb-3">
+                  
                         <div class="col-md-6">
                             <label class="form-label">Buscar análisis</label>
                             <input type="text" id="buscar-analisis" class="form-control" placeholder="Ej: hemograma, glucosa, orina...">
                         </div>
+                    
                     </div>
+                    
 
                     {{-- TABLA DE ANÁLISIS --}}
                     <h5 class="mb-3">Análisis clínicos</h5>
@@ -85,7 +87,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <input type="number" class="form-control input-cantidad text-center" min="1" value="1" disabled>
+                                        <input type="number" class="form-control input-cantidad text-center" min="1" value="0" disabled>
                                     </td>
                                     <td class="text-end pe-4">
                                         <span class="subtotal fw-bold">0.00</span>

@@ -20,16 +20,16 @@ class PermissionTableSeeder extends Seeder
             'role-edit',
             'role-delete',
 
-            'product-list',
-            'product-create',
-            'product-edit',
-            'product-delete',
+            'proforma-list',
+            'proforma-create',
+            'proforma-edit',
+            'proforma-delete',
 
-            // Permisos de categorías
-            'category-list',
-            'category-create',
-            'category-edit',
-            'category-delete',
+            // Permisos de resultados
+            'result-list',
+            'result-create',
+            'result-edit',
+            'result-delete',
 
             // Permisos de usuarios
             'user-list',
@@ -42,6 +42,12 @@ class PermissionTableSeeder extends Seeder
             'permission-create',
             'permission-edit',
             'permission-delete',
+
+            // Permisos de orden
+            'order-list',
+            'order-create',
+            'order-edit',
+            'order-delete',
         ];
 
         // Creamos el rol admin (si no existe)
