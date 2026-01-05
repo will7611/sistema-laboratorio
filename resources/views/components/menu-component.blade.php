@@ -57,14 +57,16 @@
                                             <a href="{{route('users.index')}}" class="nav-link">Usuarios</a>
                                         </li>
                                          {{-- @endcan --}}
-                                        
+                                        @can('role-list')
                                         <li class="nav-item">
                                             <a href="{{route('roles.index')}}" class="nav-link">Roles</a>
                                         </li>
-                                       
+                                       @endcan
+                                       @can('permission-list')
                                         <li class="nav-item">
                                             <a href="{{route('permisos.index')}}" class="nav-link">Permisos</a>
                                         </li>
+                                        @endcan
                                     </ul>
                                 </div>
                             </li>

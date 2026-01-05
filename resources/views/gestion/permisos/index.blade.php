@@ -31,7 +31,7 @@
                             <tr>
                                 <th>#</th>
                                 <th>Nombre</th>
-                                @can('permision-edit')
+                                @can('permission-create')
                                     
                                 
                                 <th><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevoRol">
@@ -46,7 +46,7 @@
                                 <td>{{$permiso->id}}</td>
                                 <td>{{$permiso->name}}</td>
                                 <td>
-                                    @can('permision-edit')
+                                    @can('permission-edit')
                                         
                                     
                                     <div class="dropdown d-inline-block">

@@ -90,7 +90,7 @@
                             <th>Direccion</th>
                             <th>Estado</th>
                             <th>Roles</th>
-                            @can('user-edit')
+                            @can('user-create')
                             <th class="text-center">
                                 <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#nuevoUsuario">Nuevo Registro</button>
                             </th>    
