@@ -41,7 +41,7 @@
 
             <div class="col-lg-8">
               <label class="form-label">Email</label>
-              <input type="email" class="form-control @error('ci') is-invalid @enderror" name="email" value="{{ old('email') }}" placeholder="correo@ejemplo.com">
+              <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" placeholder="correo@ejemplo.com">
                 @error('email')
                 <div class="invalid-feedback">{{ $message }}</div>
               @enderror

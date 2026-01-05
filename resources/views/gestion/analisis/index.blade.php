@@ -30,7 +30,7 @@
                 <div class="card-body">
                     @include('gestion.analisis.create')
                     
-                    <table id="buttons-datatables" class="display table table-bordered " style="width:100%">  
+                    <table id="buttons-datatables" class="display table table-bordered dt-responsive" style="width:100%">  
                     
                         <thead>
                             <tr>

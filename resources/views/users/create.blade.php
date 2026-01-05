@@ -29,7 +29,10 @@
         </div><!--end col-->
         <div class="col-lg-6">
             <label for="genderInput" class="form-label">Email</label>
-            <input type="email" class="form-control" name="email" placeholder="Introducir Email">
+            <input type="email" class="form-control  @error('email') is-invalid @enderror" value="{{ old('email') }}" name="email" placeholder="Introducir Email">
+              @error('email')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
         </div><!--end col-->
         <div class="col-xxl-6">
             <div>

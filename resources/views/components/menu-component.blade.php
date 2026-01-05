@@ -1,10 +1,12 @@
+
+
 <div class="app-menu navbar-menu">
     <!-- LOGO -->
     <div class="navbar-brand-box">
         <!-- Dark Logo-->
         <a href="index" class="logo logo-dark">
             <span class="logo-sm">
-                <img src="{{asset('assets/images/logo-laboratorio.png')}}" alt="150" height="150">
+                <img src="{{asset('assets/images/logo-laboratorio.png')}}" alt="50" height="50">
             </span>
             <span class="logo-lg">
                 <img src="{{asset('assets/images/logo-laboratorio.png')}}" alt="150" height="150">
@@ -13,7 +15,7 @@
         <!-- Light Logo-->
         <a href="index" class="logo logo-light">
             <span class="logo-sm">
-                <img src="{{asset('assets/images/logo-laboratorio.png')}}" alt="150" height="150">
+                <img src="{{asset('assets/images/logo-laboratorio.png')}}" alt="50" height="50">
             </span>
             <span class="logo-lg">
                 <img src="{{asset('assets/images/logo-laboratorio.png')}}" alt="150" height="150">
@@ -36,6 +38,8 @@
                         <i class="ri-dashboard-2-line"></i> <span>Dashboard</span>
                     </a>
                 </li> <!-- end Dashboard Menu -->
+
+                <li class="menu-title"><i class="ri-more-fill"></i> <span>Gestion</span></li>
                 <li class="nav-item">
                     <a class="nav-link menu-link" href="#sidebarApps" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarApps">
                         <i class="ri-apps-2-line"></i> <span>Gestion</span>
@@ -89,14 +93,6 @@
                                         <li class="nav-item">
                                             <a href="{{route('analisis.index')}}" class="nav-link">Analisis</a>
                                         </li>
-                                     
-                                        <li class="nav-item">
-                                            <a href="{{route('proformas.index')}}" class="nav-link">Proformas</a>
-                                        </li>
-                                      
-                                        {{-- <li class="nav-item">
-                                            <a href="#" class="nav-link">Manillas</a>
-                                        </li> --}}
                                     </ul>
                                 </div>
                             </li>
@@ -104,7 +100,22 @@
                         </ul>
                     </div>
                 </li>
-
+                <li class="menu-title"><i class="ri-more-fill"></i> <span>Proformas</span></li>
+                 <li class="nav-item">
+                    <a class="nav-link menu-link" href="#sidebarLanding" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarLanding">
+                        <i class="ri-rocket-line"></i> <span data-key="t-landing">Proforma</span>
+                    </a>
+                    <div class="collapse menu-dropdown" id="sidebarLanding">
+                        <ul class="nav nav-sm flex-column">
+                            <li class="nav-item">
+                                <a href="{{route('proformas.index')}}" class="nav-link" data-key="t-one-page"> Nueva Proforma </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{route('proformas.index')}}" class="nav-link" data-key="t-one-page"> Ver Proformas </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
                 <li class="menu-title"><i class="ri-more-fill"></i> <span>Orden</span></li>
 
                 <li class="nav-item">
@@ -151,3 +162,4 @@
     </div>
     <div class="sidebar-background"></div>
 </div>
+

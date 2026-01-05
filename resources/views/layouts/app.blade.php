@@ -1,3 +1,89 @@
+{{-- 
+<!doctype html >
+<html lang="en" data-layout="twocolumn" data-sidebar="light" data-sidebar-size="lg" data-sidebar-image="none">
+
+<head>
+    <meta charset="utf-8" />
+    <title> translation.starter  | Velzon - Admin & Dashboard Template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="Premium Multipurpose Admin & Dashboard Template" name="description" />
+    <meta content="Themesbrand" name="author" />
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="http://localhost/creative2/public/assets/images/favicon.ico">
+    <!-- Layout config Js -->
+<script src="http://localhost/creative2/public/assets/js/layout.js"></script>
+<!-- Bootstrap Css -->
+<link href="http://localhost/creative2/public/assets/css/bootstrap.min.css" id="bootstrap-style" rel="stylesheet" type="text/css" />
+<!-- Icons Css -->
+<link href="http://localhost/creative2/public/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+<!-- App Css-->
+<link href="http://localhost/creative2/public/assets/css/app.min.css" id="app-style" rel="stylesheet" type="text/css" />
+<!-- custom Css-->
+<link href="http://localhost/creative2/public/assets/css/custom.min.css" id="app-style" rel="stylesheet" type="text/css" />
+
+</head>
+
+    <body>
+
+<!-- <body data-layout="horizontal"> -->
+    <!-- Begin page -->
+    <div id="layout-wrapper">
+<x-header-component/>
+        <!-- ========== App Menu ========== -->
+<x-menu-component/>
+<!-- Left Sidebar End -->
+<!-- Vertical Overlay-->
+<div class="vertical-overlay"></div>
+        <!-- ============================================================== -->
+        <!-- Start right Content here -->
+        <!-- ============================================================== -->
+        <div class="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                    <!-- start page title -->
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0 font-size-18">Starter</h4>
+
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">Pages</a></li>
+                                            <li class="breadcrumb-item active">Starter</li>
+                                    </ol>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- end page title -->
+                </div>
+                <!-- container-fluid -->
+            </div>
+            <!-- End Page-content -->
+<x-footer-component/>
+        </div>
+        <!-- end main content-->
+    </div>
+    <!-- END layout-wrapper -->
+
+<x-button-component/>
+
+    <!-- JAVASCRIPT -->
+    <script src="http://localhost/creative2/public/assets/libs/bootstrap/bootstrap.min.js"></script>
+<script src="http://localhost/creative2/public/assets/libs/simplebar/simplebar.min.js"></script>
+<script src="http://localhost/creative2/public/assets/libs/node-waves/node-waves.min.js"></script>
+<script src="http://localhost/creative2/public/assets/libs/feather-icons/feather-icons.min.js"></script>
+<script src="http://localhost/creative2/public/assets/js/pages/plugins/lord-icon-2.1.0.min.js"></script>
+<script src="http://localhost/creative2/public/assets/js/plugins.min.js"></script>
+<script src="http://localhost/creative2/public/assets/js/app.min.js"></script>
+</body>
+
+</html> --}}
+
+
+
+
 
 <!doctype html >
 <html lang="en" data-layout="twocolumn" data-sidebar="light" data-sidebar-size="lg" data-sidebar-image="none">
@@ -9,6 +95,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="Premium Multipurpose Admin & Dashboard Template" name="description" />
     <meta content="Themesbrand" name="author" />
+
+
+
     <link href="{{asset('assets/libs/jsvectormap/jsvectormap.min.css')}}" rel="stylesheet" type="text/css" />
     <link href="{{asset('assets/libs/swiper/swiper.min.css')}}" rel="stylesheet" type="text/css" />
 
@@ -67,13 +156,22 @@
 
 <x-button-component/>
 
+
+
+
+
+
+
     <!-- JAVASCRIPT -->
+    
+<script src="{{asset('assets/js/app.min.js')}}"></script>
     <script src="{{asset('assets/libs/bootstrap/bootstrap.min.js')}}"></script>
 <script src="{{asset('assets/libs/simplebar/simplebar.min.js')}}"></script>
 <script src="{{asset('assets/libs/node-waves/node-waves.min.js')}}"></script>
 <script src="{{asset('assets/libs/feather-icons/feather-icons.min.js')}}"></script>
 <script src="{{asset('assets/js/pages/plugins/lord-icon-2.1.0.min.js')}}"></script>
 <script src="{{asset('assets/js/plugins.min.js')}}"></script>
+
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 
@@ -90,7 +188,7 @@
 
 <script src="{{asset('assets/js/pages/datatables.init.js')}}"></script>
 
-<script src="{{asset('assets/js/app.min.js')}}"></script>
+
 
 
 <!-- apexcharts -->
@@ -106,4 +204,3 @@
 </body>
 
 </html>
-

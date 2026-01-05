@@ -78,7 +78,7 @@
             </div>
             <div class="card-body">
                 @include('users.create')
-                <table id="buttons-datatables" class="display table table-bordered" style="width:100%">
+                <table id="buttons-datatables" class="display table table-bordered dt-responsive" style="width:100%">
                     <thead>
                         <tr>
                             <th>Imagen</th>
