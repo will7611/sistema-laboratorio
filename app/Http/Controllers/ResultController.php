@@ -82,7 +82,8 @@ class ResultController extends Controller
     {
         $webhookUrl = config('services.n8n.resultados_webhook'); 
         if (!$webhookUrl) return false;
-
+// Obtenemos los datos del paciente desde la relación
+        $paciente = $resultado->orden->paciente;
         try {
             // Timeout de 10 segundos para pruebas locales
             $response = Http::timeout(10)->post($webhookUrl, [
@@ -90,6 +91,8 @@ class ResultController extends Controller
                 'resultado_id' => $resultado->id,
                 'paciente'     => $resultado->orden->paciente->name . ' ' . $resultado->orden->paciente->last_name,
                 'pdf_url'      => $resultado->url_pdf,
+                         'email'        => $paciente->email,      // <--- AHORA SÍ SE ENVÍA EL EMAIL
+                'telefono'     => $paciente->phone,      // <--- AÑADIMOS TELÉFONO PARA WHATSAPP
             ]);
 
             return $response->successful();
