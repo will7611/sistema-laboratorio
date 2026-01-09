@@ -16,33 +16,66 @@
         <div class="col-xxl-6">
             <div>
                 <label for="lastName" class="form-label">Nombre</label>
-                <input type="text" class="form-control" name="name" value="{{$user->name}}" placeholder="Introducir Nombre Completo">
+                <input type="text" 
+                    class="form-control @error('name') is-invalid @enderror" 
+                    name="name" 
+                    value="{{ old('name', $user->name)}}" 
+                    placeholder="Introducir Nombre Completo">
+                     <!-- Mensaje de error en rojo -->
+                    @error('name')
+                        <div class="text-danger small mt-1">{{ $message }}</div>
+                    @enderror
             </div>
         </div><!--end col-->
         <div class="col-xxl-4">
-            <div>
-                <label for="lastName" class="form-label">Rol</label>
-                <div class="form-check">
-                    <select name="role[]" class="form-control" multiple="multiple">
-                    @foreach ($role as $value => $label)
-                        <option value="{{ $value }}">
-                            {{ $label }}
-                        </option>
-                     @endforeach
-                </select>
-                </div>
+             <div>
+        <label for="lastName" class="form-label">Rol</label>
+        <div class="form-check p-0">
+            <select name="role[]" class="form-control @error('role') is-invalid @enderror" multiple="multiple">
+                @foreach ($role as $value => $label)
+                    <option value="{{ $value }}" 
+                        {{-- Lógica para mantener seleccionados los roles anteriores o actuales --}}
+                        {{ in_array($value, old('role', [])) || $user->hasRole($value) ? 'selected' : '' }}>
+                        {{ $label }}
+                    </option>
+                @endforeach
+            </select>
+            
+            <!-- Mensaje de error en rojo -->
+            @error('role')
+                <div class="text-danger small mt-1">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
             </div>
         </div><!--end col-->
         <div class="col-xxl-2">
             <div>
                 <label for="firstName" class="form-label">CI</label>
-                <input type="text" class="form-control" name="ci" value="{{$user->ci}}" placeholder="Introducir Cedula de identidad">
+                <input type="text" 
+                class="form-control @error('email') is-invalid @enderror" 
+                name="ci" 
+                value="{{old('ci', $user->ci)}}" 
+                placeholder="Introducir Cedula de identidad">
+                <!-- Mensaje de error en rojo -->
+                @error('ci')
+                    <div class="text-danger small mt-1">{{ $message }}</div>
+                @enderror
             </div>
         </div><!--end col-->
-        <div class="col-lg-4">
-            <label for="genderInput" class="form-label">Email</label>
-            <input type="email" class="form-control" name="email" value="{{$user->email}}" placeholder="Introducir Email">
-        </div><!--end col-->
+       <div class="col-lg-4">
+    <label for="genderInput" class="form-label">Email</label>
+    <input type="email" 
+           class="form-control @error('email') is-invalid @enderror" 
+           name="email" 
+           value="{{ old('email', $user->email) }}" 
+           placeholder="Introducir Email">
+
+    <!-- Mensaje de error en rojo -->
+    @error('email')
+        <div class="text-danger small mt-1">{{ $message }}</div>
+    @enderror
+</div>
         <div class="col-xxl-4">
             <div>
                 <label for="firstName" class="form-label">Contraseña</label>

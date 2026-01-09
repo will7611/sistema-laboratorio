@@ -22,6 +22,6 @@ class ProformaDetail extends Model
 
     public function analisis()
     {
-        return $this->belongsTo(Analysis::class);
+        return $this->belongsTo(Analysis::class, 'analysis_id');
     }
 }

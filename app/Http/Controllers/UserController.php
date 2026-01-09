@@ -103,34 +103,42 @@ class UserController extends Controller
      */
      public function update(UpdateUserRequest $request, $id)
     {
-        try {
-            //dd($request->all());
+       try {
             $user = User::findOrFail($id);
-            $data = $request->validated();
+            
+            // request->validated() ya filtra los datos según las reglas del Request
+            $data = $request->validated(); 
 
-        //si envia nueva imagen
-        if($request->hasFile('img')){
-            //borrar la anterior
-            if($user->img && Storage::disk('public')->exists($user->img)){
-                Storage::disk('public')->delete($user->img);
+            // Lógica de imagen (Correcta)
+            if($request->hasFile('img')){
+                if($user->img && Storage::disk('public')->exists($user->img)){
+                    Storage::disk('public')->delete($user->img);
+                }
+                $data['img'] = $request->file('img')->store('users', 'public');
             }
-            $data['img'] = $request->file('img')->store('users', 'public');
-        }
 
-        // Si envia nueva Contrase;a
-        if(!empty($data['password'])){
-            $data['password'] = Hash::make($data['password']);
-        }else{
-            unset($data['password']); //no cambiar
-        }
+            // Lógica de contraseña (Correcta)
+            if(!empty($data['password'])){
+                $data['password'] = Hash::make($data['password']);
+            } else {
+                // Importante: Eliminar password del array si está vacío para no sobreescribir con null/vacío
+                unset($data['password']); 
+            }
 
-        $user->update($data);
-        //Actualizat 
-        $user->syncRoles($request->input('role'));
+            $user->update($data);
 
-        return redirect()->route('users.index')->with('success', 'Usuario Actualizado');
+            // Actualizar Roles
+            // Asegúrate que en el Request la regla sea 'role' y aquí recibas 'role'
+            if ($request->has('role')) {
+                $user->syncRoles($request->input('role'));
+            }
+
+            return redirect()->route('users.index')->with('success', 'Usuario Actualizado correctamente');
+
         } catch (\Exception $e) {
-            return redirect()->route('users.index')->with('error', 'error al actualizar: ', $e->getMessage());
+            // Loguear el error es buena práctica para ti como desarrollador
+            \Log::error($e->getMessage());
+            return redirect()->route('users.index')->with('error', 'Error al actualizar: ' . $e->getMessage());
         }
         
     }

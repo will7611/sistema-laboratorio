@@ -35,4 +35,13 @@ class UpdateUserRequest extends FormRequest
             'img' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
     }
+    public function messages()
+    {
+        return [
+            'role.required' => 'Es necesario seleccionar al menos un rol para el usuario.',
+            'email.unique' => 'Este correo electrónico ya está registrado por otro usuario.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
+            'password.min' => 'La contraseña debe tener al menos 6 caracteres.',
+        ];
+    }
 }

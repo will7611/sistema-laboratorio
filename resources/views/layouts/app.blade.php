@@ -120,7 +120,7 @@
 <link href="{{asset('assets/css/app.min.css')}}" id="app-style" rel="stylesheet" type="text/css" />
 <!-- custom Css-->
 <link href="{{asset('assets/css/custom.min.css')}}" id="app-style" rel="stylesheet" type="text/css" />
-
+<link rel="stylesheet" href="{{asset('css/styles.css')}}">
 </head>
 
     <body>
@@ -157,7 +157,12 @@
 <x-button-component/>
 
 
-
+<div id="global-loader" style="display: none;">
+    <div class="loader-content">
+        <!-- Reemplaza con la ruta de tu logo -->
+        <img src="{{ asset('assets/images/logo-laboratorio.png') }}" alt="Logo" class="loader-logo">
+    </div>
+</div>
 
 
 
@@ -200,7 +205,56 @@
 <script src="{{asset('assets/js/pages/dashboard-ecommerce.init.js')}}"></script>
 <script src="{{asset('assets/js/app.min.js')}}"></script>
 
+ <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const loader = document.getElementById('global-loader');
+
+        // 1. Interceptar todos los formularios al enviarse
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                // Si el formulario es válido (checkValidity es nativo de HTML5)
+                if (this.checkValidity()) {
+                    loader.style.display = 'flex';
+                    
+                    // Deshabilitar el botón submit para evitar dobles clics
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if(submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerText = 'Procesando...';
+                    }
+                }
+            });
+        });
+
+        // 2. (Opcional) Mostrar loader en enlaces de navegación del menú
+        // Evita ponerlo en enlaces que solo abren modales (#) o javascript:void(0)
+        const links = document.querySelectorAll('a');
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                const target = this.getAttribute('target');
+                
+                // Solo activar si es un enlace real interno y no abre en nueva pestaña
+                if (href && 
+                    !href.startsWith('#') && 
+                    !href.startsWith('javascript') && 
+                    target !== '_blank') {
+                    loader.style.display = 'flex';
+                }
+            });
+        });
+
+        // 3. Ocultar loader si la página se cargó desde el cache (botón atrás del navegador)
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                loader.style.display = 'none';
+            }
+        });
+    });
+</script>
  @stack('scripts')
+
 </body>
 
 </html>

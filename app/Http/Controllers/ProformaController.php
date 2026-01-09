@@ -129,9 +129,24 @@ class ProformaController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Proforma $proforma)
+    public function edit($id)
     {
-        //
+        // 1. Cargar la proforma JUNTO con paciente y los análisis de cada detalle.
+        // 'detalles.analisis' es VITAL para que la tabla de JS se llene.
+        $proforma = Proforma::with(['paciente', 'detalles.analisis'])->findOrFail($id);
+
+        // 2. Validación: No dejar editar si ya tiene orden o está aceptada
+        if ($proforma->status == 'aceptada' || $proforma->orden) {
+            return redirect()->route('proformas.index')
+                ->with('error', 'No se puede editar una proforma que ya ha sido aceptada.');
+        }
+
+        // 3. Cargar listas para los desplegables
+        $pacientes = Paciente::all();
+        $analisis  = Analysis::all();
+
+        // 4. Retornar vista
+        return view('gestion.proformas.edit', compact('proforma', 'pacientes', 'analisis'));
     }
     // Aceptar proforma y crear orden+resultado
     public function aceptar(Request $request, Proforma $proforma)
@@ -232,9 +247,89 @@ class ProformaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Proforma $proforma)
+    public function revertir($id)
     {
-        //
+        try {
+            $proforma = Proforma::findOrFail($id);
+            
+            // Verificamos si tiene orden
+            if ($proforma->orden) {
+                // OPCIÓN A: Eliminar la orden (si la lógica de negocio lo permite)
+                $proforma->orden->delete(); 
+                
+                // O OPCIÓN B: Solo desvincular (si quieres mantener registro de la orden pero cancelada)
+                // $proforma->orden->status = 'anulada';
+                // $proforma->orden->save();
+            }
+
+            $proforma->status = 'pendiente';
+            // Desvincular la relación si es necesario o al borrar la orden ya se soluciona
+            $proforma->save();
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Proforma revertida a pendiente',
+                'proforma_id' => $proforma->id
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+       // 1. Validación
+        $request->validate([
+            'patient_id'   => 'required|exists:pacientes,id',
+            'analisis_id'  => 'required|array|min:1',
+            'cantidades'   => 'required|array|min:1', // Validamos array de cantidades
+            'total_amount' => 'required|numeric',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $proforma = Proforma::findOrFail($id);
+
+            // 2. Actualizar Cabecera
+            $proforma->update([
+                'paciente_id'  => $request->patient_id,
+                'total_amount' => $request->total_amount,
+                // 'issue_date' usualmente no se cambia, pero si quieres: 'issue_date' => $request->issue_date
+            ]);
+
+            // 3. Sincronizar Detalles (Borrar y Crear de nuevo)
+            $proforma->detalles()->delete();
+
+            $analisisIds = $request->analisis_id;
+            $precios     = $request->precios;
+            $cantidades  = $request->cantidades; // Recibimos las cantidades
+
+            for ($i = 0; $i < count($analisisIds); $i++) {
+                
+                $cantidad = $cantidades[$i];
+                $precio   = $precios[$i];
+                $subtotal = $cantidad * $precio;
+
+                $proforma->detalles()->create([
+                    'analysis_id' => $analisisIds[$i],
+                    'unit_price'  => $precio,
+                    'amount'      => $cantidad,  // GUARDAMOS LA CANTIDAD
+                    'subtotal'    => $subtotal   // GUARDAMOS EL SUBTOTAL REAL
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('proformas.index')
+                ->with('success', 'Proforma actualizada correctamente.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Error al actualizar: ' . $e->getMessage());
+        }
     }
 
     /**

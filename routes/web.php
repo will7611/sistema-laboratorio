@@ -39,6 +39,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::post('proformas/{proforma}/aceptar', [ProformaController::class, 'aceptar'])->name('proformas.aceptar');
    // Route::get('/proformas/{id}/detalles', [ProformaController::class, 'detalles'])->name('detallesAjax');
 
+    Route::post('proformas/{id}/revertir', [ProformaController::class, 'revertir'])->name('proformas.revertir');
 
 
         // Órdenes
@@ -60,5 +61,6 @@ Route::group(['middleware' => ['auth']], function() {
     // 4. Reenviar a n8n manualmente (botón de la tabla)
     Route::post('resultados/{id}/enviar-n8n', [ResultController::class, 'sendToN8n'])
         ->name('resultados.enviarN8n');
+
 
 });
