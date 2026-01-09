@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
-
+use App\Models\Orders;
 use App\Models\Paciente;
+use App\Models\Proforma;
+use App\Models\Result;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -26,12 +28,25 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $data = [
-            'totalUsers' => User::count(),
-            'totalPaciente' => Paciente::count(),
-        ];
-    
+         // Métricas principales
+    $totalPaciente = Paciente::count();
+    $proformasCount = Proforma::whereMonth('created_at', now()->month)->count();
+    $resultadosPendientes = Result::where('status', '!=', 'validado')->count();
+    $ingresosHoy = Proforma::whereDate('created_at', now())->sum('total_amount');
 
-        return view('home', $data);
+    // Datos para gráficos
+    $ordenesCompletadas = Orders::where('status', 'completada')->count();
+    $ordenesProceso = Orders::where('status', 'en_proceso')->count();
+    $ordenesPendientes = Orders::where('status', 'pendiente')->count();
+
+    return view('home', compact(
+        'totalPaciente', 
+        'proformasCount', 
+        'resultadosPendientes', 
+        'ingresosHoy',
+        'ordenesCompletadas',
+        'ordenesProceso',
+        'ordenesPendientes'
+    ));
     }
 }
