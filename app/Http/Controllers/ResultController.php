@@ -157,4 +157,62 @@ class ResultController extends Controller
             'message_error' => $error,
         ]);
     }
+    public function index(Request $request)
+    { // Iniciamos consulta con relaciones necesarias
+        $query = Result::with(['orden.paciente']);
+
+        // ----------------------------------------------------
+        // 1. BÚSQUEDA INTELIGENTE (Nombre, Apellido o CI)
+        // ----------------------------------------------------
+        if ($request->filled('search')) {
+            $search = trim($request->search); // Limpiamos espacios extra
+
+            // Buscamos dentro de la relación 'orden.paciente'
+            $query->whereHas('orden.paciente', function ($q) use ($search) {
+                $q->where(function($subQ) use ($search) {
+                    // Búsqueda por Nombre (insensible a mayúsculas)
+                    $subQ->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%'])
+                        // Búsqueda por Apellido
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . strtolower($search) . '%'])
+                        // Búsqueda por CI (Exacta o parcial)
+                        ->orWhere('ci', 'LIKE', "%{$search}%")
+                        // Búsqueda por Nombre Completo (Concatenado)
+                        ->orWhereRaw("LOWER(CONCAT(name, ' ', last_name)) LIKE ?", ['%' . strtolower($search) . '%']);
+                });
+            });
+        }
+
+        // ----------------------------------------------------
+        // 2. FILTRO POR FECHAS
+        // ----------------------------------------------------
+        if ($request->filled('start_date')) {
+            $query->whereDate('result_date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('result_date', '<=', $request->end_date);
+        }
+
+        // ----------------------------------------------------
+        // 3. FILTRO POR ESTADO
+        // ----------------------------------------------------
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Resultados paginados (10 por página)
+        $resultados = $query->orderBy('id', 'desc')->paginate(10);
+
+        return view('gestion.resultados.index', compact('resultados'));
+    }
+     public function downloadPdf($id)
+    {
+        $resultado = Result::findOrFail($id);
+
+        if (!$resultado->pdf_path || !file_exists(public_path('storage/' . $resultado->pdf_path))) {
+            return back()->with('error', 'El archivo PDF no se encuentra disponible.');
+        }
+
+        return response()->download(public_path('storage/' . $resultado->pdf_path));
+    }
 }

@@ -49,6 +49,7 @@ Route::group(['middleware' => ['auth']], function() {
     
     // 1. Ver detalles y editar
     Route::resource('resultados', ResultController::class)->only(['index', 'show', 'update']);
+    
 
     // 2. Formulario para cargar PDF
     Route::get('resultados/{resultado}/upload', [ResultController::class, 'uploadForm'])
@@ -62,5 +63,9 @@ Route::group(['middleware' => ['auth']], function() {
     Route::post('resultados/{id}/enviar-n8n', [ResultController::class, 'sendToN8n'])
         ->name('resultados.enviarN8n');
 
+        Route::prefix('resultados')->name('resultados.')->group(function () {
+    Route::get('/', [ResultController::class, 'index'])->name('index');
+    Route::get('/{id}/descargar', [ResultController::class, 'downloadPdf'])->name('download');
+});
 
 });

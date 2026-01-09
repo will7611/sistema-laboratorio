@@ -121,9 +121,9 @@
                     </a>
                     <div class="collapse menu-dropdown" id="sidebarAuth">
                         <ul class="nav nav-sm flex-column">
-                            <li class="nav-item">
+                            {{-- <li class="nav-item">
                                 <a href="#" class="nav-link">Nueva Orden</a>
-                            </li>
+                            </li> --}}
                             <li class="nav-item">
                                 <a href="{{route('ordenes.index')}}" class="nav-link">Lista Ordenes</a>
                             </li>
@@ -140,11 +140,9 @@
                         <div class="row">
                             <div class="col-lg-4">
                                 <ul class="nav nav-sm flex-column">
+                                  
                                     <li class="nav-item">
-                                        <a href="#" class="nav-link">Nueva</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="#" class="nav-link">Lista de Resultado</a>
+                                        <a href="{{route('resultados.index')}}" class="nav-link">Lista de Resultado</a>
                                     </li>
                                    
                                 </ul>
