@@ -157,12 +157,12 @@
 <x-button-component/>
 
 
-<div id="global-loader" style="display: none;">
+{{-- <div id="global-loader" style="display: none;">
     <div class="loader-content">
         <!-- Reemplaza con la ruta de tu logo -->
         <img src="{{ asset('assets/images/logo-laboratorio.png') }}" alt="Logo" class="loader-logo">
     </div>
-</div>
+</div> --}}
 
 
 

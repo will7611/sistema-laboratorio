@@ -31,7 +31,6 @@
                     @csrf
                     <div class="row mb-4">
                         {{-- PACIENTE --}}
-                    
                         <div class="col-md-6">
                             <label class="form-label">Paciente</label>
                             <select name="paciente_id" class="form-select" required>
@@ -43,18 +42,14 @@
                                 @endforeach
                             </select>
                         </div>
-                   
 
-                    {{-- BUSCADOR --}}
-                  
+                        {{-- BUSCADOR --}}
                         <div class="col-md-6">
                             <label class="form-label">Buscar análisis</label>
                             <input type="text" id="buscar-analisis" class="form-control" placeholder="Ej: hemograma, glucosa, orina...">
                         </div>
-                    
                     </div>
                     
-
                     {{-- TABLA DE ANÁLISIS --}}
                     <h5 class="mb-3">Análisis clínicos</h5>
 
@@ -87,7 +82,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <input type="number" class="form-control input-cantidad text-center" min="1" value="0" disabled>
+                                        <input type="number" class="form-control input-cantidad text-center" min="1" value="1" disabled>
                                     </td>
                                     <td class="text-end pe-4">
                                         <span class="subtotal fw-bold">0.00</span>
@@ -221,7 +216,8 @@
     });
 
     // —— Cálculos de Subtotal y Total ——
-    function recalcularFila($fila) {
+    // estricto = true (fuerza a 1 si está vacío), estricto = false (permite vacío mientras escribes)
+    function recalcularFila($fila, estricto = false) {
         const checked = $fila.find('.chk-analisis').is(':checked');
         const precio  = parseFloat($fila.find('.precio').data('precio')) || 0;
         const $inputCantidad = $fila.find('.input-cantidad');
@@ -229,17 +225,27 @@
         if (!checked) {
             $inputCantidad.prop('disabled', true);
             $fila.find('.subtotal').text('0.00');
-            $fila.removeClass('table-active'); // Quitar resaltado
+            $fila.removeClass('table-active'); 
             return;
         }
 
         $inputCantidad.prop('disabled', false);
-        $fila.addClass('table-active'); // Resaltar fila seleccionada
+        $fila.addClass('table-active'); 
 
         let cantidad = parseInt($inputCantidad.val());
-        if (isNaN(cantidad) || cantidad < 1) {
-            cantidad = 1;
-            $inputCantidad.val(1);
+
+        // Lógica corregida para permitir edición fluida
+        if (estricto) {
+            // Si es estricto (blur o check), forzamos a 1 si es inválido
+            if (isNaN(cantidad) || cantidad < 1) {
+                cantidad = 1;
+                $inputCantidad.val(1);
+            }
+        } else {
+            // Si no es estricto (input), permitimos vacío o 0 visualmente, pero calculamos con 0
+            if (isNaN(cantidad) || cantidad < 0) {
+                cantidad = 0; 
+            }
         }
 
         const subtotal = precio * cantidad;
@@ -248,7 +254,6 @@
 
     function recalcularTotal() {
         let total = 0;
-        // Iteramos sobre TODAS las filas (incluso las ocultas por paginación)
         $('.fila-analisis').each(function() {
             const sub = parseFloat($(this).find('.subtotal').text());
             if (!isNaN(sub)) {
@@ -259,15 +264,25 @@
     }
 
     // —— Eventos Inputs ——
+    
+    // 1. Checkbox: Validación estricta
     $(document).on('change', '.chk-analisis', function() {
         const $fila = $(this).closest('tr');
-        recalcularFila($fila);
+        recalcularFila($fila, true);
         recalcularTotal();
     });
 
+    // 2. Escribir: Validación suave (permite borrar)
     $(document).on('input', '.input-cantidad', function() {
         const $fila = $(this).closest('tr');
-        recalcularFila($fila);
+        recalcularFila($fila, false);
+        recalcularTotal();
+    });
+
+    // 3. Salir del input: Validación estricta (rellena con 1 si estaba vacío)
+    $(document).on('blur', '.input-cantidad', function() {
+        const $fila = $(this).closest('tr');
+        recalcularFila($fila, true);
         recalcularTotal();
     });
 
@@ -290,14 +305,17 @@
             return;
         }
 
-        // Recolectar Items Seleccionados (de todas las páginas)
+        // Recolectar Items Seleccionados
         let items = [];
         $('.fila-analisis').each(function() {
             const $fila = $(this);
             if ($fila.find('.chk-analisis').is(':checked')) {
+                // Asegurar cantidad válida al enviar
+                let cant = parseInt($fila.find('.input-cantidad').val()) || 1;
+                
                 items.push({
                     analysis_id: $fila.find('.analisis-id').val(),
-                    cantidad:    $fila.find('.input-cantidad').val()
+                    cantidad:    cant
                 });
             }
         });

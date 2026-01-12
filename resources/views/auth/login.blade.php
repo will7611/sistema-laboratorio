@@ -176,4 +176,34 @@ document.addEventListener('DOMContentLoaded', function () {
     <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
     <script src="{{ asset('assets/libs/node-waves/node-waves.min.js') }}"></script>
     <script src="{{ asset('assets/libs/feather-icons/feather-icons.min.js') }}"></script>
-    <script src="{{ asset('assets
+    <script src="{{asset('assets/js/pages/plugins/lord-icon-2.1.0.min.js')}}"></script>
+    <script src="{{asset('assets/js/plugins.min.js')}}"></script>
+    <script src="{{asset('assets/libs/particles.js/particles.js.min.js')}}"></script>
+    <script src="{{asset('assets/js/pages/particles.app.js')}}"></script>
+    <script src="{{asset('assets/js/pages/password-addon.init.')}}"></script>
+<!-- Script para mostrar/ocultar contraseña -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const toggleButton = document.getElementById("password-addon");
+        const passwordInput = document.getElementById("password-input");
+        
+        if (toggleButton && passwordInput) {
+            toggleButton.addEventListener("click", function() {
+                // Alternar tipo de input
+                const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+                passwordInput.setAttribute("type", type);
+                
+                // Alternar icono (Ojo abierto / Ojo tachado)
+                const icon = toggleButton.querySelector("i");
+                if (icon) {
+                    icon.classList.toggle("ri-eye-fill");
+                    icon.classList.toggle("ri-eye-off-fill");
+                }
+            });
+        }
+    });
+</script>
+</body>
+
+    </body>
+</html>

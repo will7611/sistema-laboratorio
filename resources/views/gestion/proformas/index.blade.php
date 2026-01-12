@@ -30,7 +30,7 @@
 
             <div class="card-body">
                 <div class="table-responsive">
-                    <table id="tabla-proformas" class="table table-bordered table-striped align-middle">
+                    <table id="tabla-proformas" class="table table-bordered table-striped align-middle dt-responsive">
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 50px;">#</th>
