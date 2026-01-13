@@ -9,8 +9,11 @@ class PermisoController extends Controller
 {
     function __construct()
     {
-         $this->middleware('permission:permission-list|permission-create', ['only' => ['index','store']]);
+        // Ajusté los permisos para que coincidan con la lógica estándar
+         $this->middleware('permission:permission-list', ['only' => ['index']]);
          $this->middleware('permission:permission-create', ['only' => ['create','store']]);
+         $this->middleware('permission:permission-edit', ['only' => ['edit','update']]);
+         $this->middleware('permission:permission-delete', ['only' => ['destroy']]);
     }
     /**
      * Display a listing of the resource.
@@ -33,19 +36,22 @@ class PermisoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, Permission $permiso)
+    public function store(Request $request)
     {
+        // Validación para CREAR (sin ignorar ID porque es nuevo)
+        $request->validate([
+            'name' => 'required|string|max:255|unique:permissions,name'
+        ]);
+
         try {
-            $validatedData = $request->validate([
-                'name' => 'required|string|max:255|unique:permissions,name,'.$permiso->id
-            ]);
+            // Forma correcta de crear con Spatie
+            Permission::create(['name' => $request->name]);
 
-            $permiso->name = $validatedData['name'];
-            $permiso->save();
-
-            return redirect()->route('permisos.index')->with('success', 'Permiso creado exitosamente');
+            return redirect()->route('permisos.index')
+                ->with('success', 'Permiso creado exitosamente');
         } catch (\Exception $e) {
-            return redirect()->route('permisos.index')->with('error', 'No se pudo crear el permiso', $e->getMessage());
+            return redirect()->route('permisos.index')
+                ->with('error', 'Error al crear: ' . $e->getMessage());
         }
     }
 
@@ -70,7 +76,22 @@ class PermisoController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $permiso = Permission::findById($id); // Buscamos por ID
+
+        // Validación para ACTUALIZAR (ignoramos el ID actual para que no de error de unique)
+        $request->validate([
+            'name' => 'required|string|max:255|unique:permissions,name,'.$permiso->id
+        ]);
+
+        try {
+            $permiso->update(['name' => $request->name]);
+
+            return redirect()->route('permisos.index')
+                ->with('success', 'Permiso actualizado exitosamente');
+        } catch (\Exception $e) {
+            return redirect()->route('permisos.index')
+                ->with('error', 'Error al actualizar: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -78,6 +99,15 @@ class PermisoController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            $permiso = Permission::findById($id);
+            $permiso->delete();
+
+            return redirect()->route('permisos.index')
+                ->with('success', 'Permiso eliminado exitosamente');
+        } catch (\Exception $e) {
+            return redirect()->route('permisos.index')
+                ->with('error', 'Error al eliminar: ' . $e->getMessage());
+        }
     }
 }

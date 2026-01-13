@@ -68,35 +68,56 @@
                                 
                                 <td>
                                     <div class="dropdown d-inline-block">
-                                        <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="ri-more-fill align-middle"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            
-                                                
-                                            
-                                            {{-- <li><a href="#!" class="dropdown-item"><i class="ri-eye-fill align-bottom me-2 text-muted"></i> Ver</a></li> --}}
-                                            <li><button type="button" class="dropdown-item edit-item-btn" data-bs-toggle="modal" data-bs-target="#editaranalisis-{{$analisi->id}}"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> Editar</a></li>
-                                            
-                                            <li>
-                                                @if ($analisi->status == 1)
-                                                    <button title="Deshabilitar" data-bs-toggle="modal" data-bs-target="#confirmModal-{{$analisi->id}}" class="dropdown-item remove-item-btn">
-                                                        <i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i>  Deshabilitar
-                                                    </button>
-                                                    @else
-                                                    <button title="Habilitar" data-bs-toggle="modal" data-bs-target="#confirmModal-{{$analisi->id}}" class="dropdown-item remove-item-btn">
-                                                        <i class="ri-pencil-fill align-bottom me-2 text-muted"></i>Habilitar
-                                                    </button>
-                                                 @endif
-                                            </li>
-                                            <li>
-                                                <button type="button" class="dropdown-item remove-item-btn" data-bs-toggle="modal" data-bs-target="#eliminarcategoria-{{$analisi->id}}">
-                                                    <i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> Eliminar
-                                                </button>
-                                            </li>
-                                           
-                                        </ul>
-                                    </div>
+    <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="ri-more-fill align-middle"></i>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        
+        {{-- 1. EDITAR (Solo Admin) --}}
+        @role('Admin')
+            <li>
+                <button type="button" class="dropdown-item edit-item-btn" data-bs-toggle="modal" data-bs-target="#editaranalisis-{{$analisi->id}}">
+                    <i class="ri-pencil-fill align-bottom me-2 text-muted"></i> Editar
+                </button>
+            </li>
+        @endrole
+
+        {{-- 2. HABILITAR / DESHABILITAR (Admin Y Laboratorista) --}}
+        @hasanyrole('Admin|Laboratorista')
+            <li>
+                @if ($analisi->status == 1)
+                    <button title="Deshabilitar" data-bs-toggle="modal" data-bs-target="#confirmModal-{{$analisi->id}}" class="dropdown-item remove-item-btn">
+                        <i class="ri-stop-circle-fill align-bottom me-2 text-muted"></i> Deshabilitar
+                    </button>
+                @else
+                    <button title="Habilitar" data-bs-toggle="modal" data-bs-target="#confirmModal-{{$analisi->id}}" class="dropdown-item remove-item-btn">
+                        <i class="ri-play-circle-fill align-bottom me-2 text-muted"></i> Habilitar
+                    </button>
+                @endif
+            </li>
+        @endhasanyrole
+
+        {{-- 3. ELIMINAR (Solo Admin) --}}
+        @role('Admin')
+            <li>
+                <button type="button" class="dropdown-item remove-item-btn" data-bs-toggle="modal" data-bs-target="#eliminarcategoria-{{$analisi->id}}">
+                    <i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> Eliminar
+                </button>
+            </li>
+        @endrole
+
+        {{-- 4. MENSAJE POR DEFECTO (Si no tiene ningún permiso) --}}
+        @unlessrole('Admin|Laboratorista')
+            <li>
+                <span class="dropdown-item disabled text-muted" style="cursor: default;">
+                    <i class="ri-lock-fill align-bottom me-2"></i> Solo lectura
+                </span>
+            </li>
+        @endunlessrole
+
+    </ul>
+</div>
+
                                 </td>
                                 {{-- @endcan --}}
                             </tr>

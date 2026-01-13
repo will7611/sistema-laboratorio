@@ -41,6 +41,7 @@
                                 <th>Edad</th>
                                 <th>Telefono</th>
                                 <th>Email</th>
+                                
                                 <th>Direccion</th>
                                 
                                 {{-- @can('client-edit') --}}
@@ -73,26 +74,40 @@
                                     
                                 
                                 <td>
-                                    <div class="dropdown d-inline-block">
-                                        <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="ri-more-fill align-middle"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            
-                                                
-                                            
-                                            {{-- <li><a href="#!" class="dropdown-item"><i class="ri-eye-fill align-bottom me-2 text-muted"></i> Ver</a></li> --}}
-                                            <li><button type="button" class="dropdown-item edit-item-btn" data-bs-toggle="modal" data-bs-target="#editarclient-{{$paciente->id}}"><i class="ri-pencil-fill align-bottom me-2 text-muted"></i> Editar</a></li>
-                                            
-                                            
-                                            <li>
-                                                <button type="button" class="dropdown-item remove-item-btn" data-bs-toggle="modal" data-bs-target="#eliminarclient-{{$paciente->id}}">
-                                                    <i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> Eliminar
-                                                </button>
-                                            </li>
-                                           
-                                        </ul>
-                                    </div>
+                                   <div class="dropdown d-inline-block">
+    <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="ri-more-fill align-middle"></i>
+    </button>
+    
+    <ul class="dropdown-menu dropdown-menu-end">
+        
+        {{-- OPCIONES SOLO PARA ADMIN --}}
+        @role('Admin') 
+            <li>
+                <button type="button" class="dropdown-item edit-item-btn" data-bs-toggle="modal" data-bs-target="#editarclient-{{$paciente->id}}">
+                    <i class="ri-pencil-fill align-bottom me-2 text-muted"></i> Editar
+                </button>
+            </li>
+            
+            <li>
+                <button type="button" class="dropdown-item remove-item-btn" data-bs-toggle="modal" data-bs-target="#eliminarclient-{{$paciente->id}}">
+                    <i class="ri-delete-bin-fill align-bottom me-2 text-muted"></i> Eliminar
+                </button>
+            </li>
+        @else
+            {{-- OPCIÓN PARA NO ADMINS (Recepcionista, Bioquímico, etc) --}}
+            <li>
+    <span class="dropdown-item disabled text-muted" style="cursor: default;">
+        <i class="ri-lock-fill align-bottom me-2"></i> Solo lectura
+    </span>
+</li>
+            {{-- O simplemente un texto deshabilitado --}}
+            {{-- <li><span class="dropdown-item text-muted disabled">Sin acciones permitidas</span></li> --}}
+        @endrole
+
+    </ul>
+</div>
+
                                 </td>
                                 {{-- @endcan --}}
                             </tr>

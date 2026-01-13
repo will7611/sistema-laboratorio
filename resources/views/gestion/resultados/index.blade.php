@@ -86,7 +86,7 @@
                                 <th>Validado Por</th>
                                 <th class="text-center">Estado (Cambiar)</th>
                                 <th class="text-center">PDF</th>
-                                <th class="text-center">Acciones</th>
+                                {{-- <th class="text-center">Acciones</th> --}}
                             </tr>
                         </thead>
                         <tbody>
@@ -224,7 +224,7 @@
                                     </td>
 
                                     <!-- ACCIONES (REENVIAR) -->
-                                    <td class="text-center">
+                                    {{-- <td class="text-center">
                                         @if($result->pdf_path)
                                             <button onclick="enviarAn8n({{ $result->id }})" 
                                                     class="btn btn-sm btn-outline-primary" 
@@ -236,7 +236,7 @@
                                                 <i class="mdi mdi-block-helper"></i>
                                             </button>
                                         @endif
-                                    </td>
+                                    </td> --}}
                                 </tr>
                             @empty
                                 <tr>

@@ -52,21 +52,21 @@
                                 </a>
                                 <div class="collapse menu-dropdown" id="sidebarEmail">
                                     <ul class="nav nav-sm flex-column">
-                                        {{-- @can('user-ist') --}}
+                                        
                                         <li class="nav-item">
                                             <a href="{{route('users.index')}}" class="nav-link">Usuarios</a>
                                         </li>
-                                         {{-- @endcan --}}
-                                        @can('role-list')
+                                         
+                                        @role('Admin')
                                         <li class="nav-item">
                                             <a href="{{route('roles.index')}}" class="nav-link">Roles</a>
                                         </li>
-                                       @endcan
-                                       @can('permission-list')
+                                       @endrole
+                                       @role('Admin')
                                         <li class="nav-item">
                                             <a href="{{route('permisos.index')}}" class="nav-link">Permisos</a>
                                         </li>
-                                        @endcan
+                                        @endrole
                                     </ul>
                                 </div>
                             </li>
