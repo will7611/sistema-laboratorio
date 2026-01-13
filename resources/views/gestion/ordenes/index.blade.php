@@ -26,7 +26,7 @@
 
             <div class="card-body">
                 <div class="table-responsive">
-                    <table id="tabla-ordenes" class="table table-bordered table-striped align-middle dt-responsive">
+                    <table id="tabla-ordenes" class="table table-bordered table-striped align-middle ">
                         <thead class="table-light">
                             <tr>
                                 <th>#</th>

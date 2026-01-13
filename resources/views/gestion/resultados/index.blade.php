@@ -80,19 +80,22 @@
                                 <th>Paciente</th>
                                 <th>Fecha Resultado</th>
                                 <th>Validado Por</th>
-                                <th>Estado</th>
+                                <th class="text-center">Estado (Cambiar)</th>
                                 <th class="text-center">PDF</th>
-                                <th>Acciones</th>
+                                {{-- <th>Acciones</th> --}}
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($resultados as $result)
                                 <tr>
+                                    <!-- ORDEN ID -->
                                     <td class="fw-bold">
                                         <a href="{{ route('ordenes.show', $result->order_id) }}">
                                             #{{ $result->orden->id ?? '---' }}
                                         </a>
                                     </td>
+
+                                    <!-- PACIENTE -->
                                     <td>
                                         <h5 class="font-size-14 mb-1">
                                             {{ $result->orden->paciente->name ?? 'N/A' }} 
@@ -100,36 +103,99 @@
                                         </h5>
                                         <small class="text-muted">CI: {{ $result->orden->paciente->ci ?? '-' }}</small>
                                     </td>
+
+                                    <!-- FECHA -->
                                     <td>
                                         <i class="mdi mdi-calendar me-1"></i>
                                         {{ \Carbon\Carbon::parse($result->result_date)->format('d/m/Y') }}
                                     </td>
+
+                                    <!-- VALIDADO POR (NUEVO) -->
                                     <td>
-                                        {{ $result->validated_by ?? 'Pendiente' }}
-                                    </td>
-                                    <td>
-                                        @if($result->status == 'validado' || $result->status == 'entregado')
-                                            <span class="badge bg-success font-size-12 p-2">
-                                                <i class="mdi mdi-check-circle me-1"></i> {{ ucfirst($result->status) }}
+                                        @if($result->validated_by)
+                                            <span class="badge bg-soft-info text-info font-size-12">
+                                                <i class="mdi mdi-account-check"></i> 
+                                                {{ $result->validator->name ?? 'ID: ' . $result->validated_by }}
                                             </span>
+                                            <div class="small text-muted mt-1">
+                                                {{ $result->validated_date ? \Carbon\Carbon::parse($result->validated_date)->format('d/m/Y H:i') : '' }}
+                                            </div>
                                         @else
-                                            <span class="badge bg-warning font-size-12 p-2">
-                                                <i class="mdi mdi-clock-outline me-1"></i> {{ ucfirst($result->status) }}
-                                            </span>
+                                            <span class="text-muted small fst-italic">- Pendiente -</span>
                                         @endif
                                     </td>
+
+                                    <!-- ESTADO CON BOTÓN DROPDOWN (NUEVO) -->
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            <button type="button" 
+                                                    class="btn btn-sm dropdown-toggle w-100 
+                                                    {{ $result->status == 'entregado' ? 'btn-success' : ($result->status == 'validado' ? 'btn-info' : 'btn-secondary') }}" 
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                
+                                                @if($result->status == 'entregado')
+                                                    <i class="mdi mdi-check-all"></i> Entregado
+                                                @elseif($result->status == 'validado')
+                                                    <i class="mdi mdi-check-circle"></i> Validado
+                                                @else
+                                                    <i class="mdi mdi-clock-outline"></i> Pendiente
+                                                @endif
+                                            </button>
+                                            
+                                            <ul class="dropdown-menu">
+                                                <!-- Opción: Validado -->
+                                                <li>
+                                                    <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
+                                                        @csrf
+                                                        <input type="hidden" name="status" value="validado">
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="mdi mdi-check-circle text-info"></i> Marcar como Validado
+                                                        </button>
+                                                    </form>
+                                                </li>
+
+                                                <!-- Opción: Entregado -->
+                                                <li>
+                                                    <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
+                                                        @csrf
+                                                        <input type="hidden" name="status" value="entregado">
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="mdi mdi-check-all text-success"></i> Marcar como Entregado
+                                                        </button>
+                                                    </form>
+                                                </li>
+
+                                                <li><hr class="dropdown-divider"></li>
+
+                                                <!-- Opción: Volver a Pendiente -->
+                                                <li>
+                                                    <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
+                                                        @csrf
+                                                        <input type="hidden" name="status" value="pendiente">
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="mdi mdi-undo text-secondary"></i> Volver a Pendiente
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+
+                                    <!-- PDF -->
                                     <td class="text-center">
                                         @if($result->pdf_path)
                                             <a href="{{ route('resultados.download', $result->id) }}" 
                                                class="btn btn-sm btn-danger" 
                                                title="Descargar PDF" target="_blank">
-                                                <i class="mdi mdi-file-pdf font-size-16"></i> Descargar
+                                                <i class="mdi mdi-file-pdf font-size-16">PDF</i>
                                             </a>
                                         @else
                                             <span class="text-muted small">Sin archivo</span>
                                         @endif
                                     </td>
-                                    <td>
+
+                                    <!-- ACCIONES EXTRA -->
+                                    {{-- <td>
                                         <div class="dropdown">
                                             <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                                 <i class="mdi mdi-dots-horizontal"></i>
@@ -140,14 +206,15 @@
                                                         <i class="mdi mdi-eye me-2 text-primary"></i> Ver Detalle
                                                     </a>
                                                 </li>
+                                                <!-- Botón Manual de Envío a n8n -->
                                                 <li>
-                                                    <a class="dropdown-item" href="#">
-                                                        <i class="mdi mdi-whatsapp me-2 text-success"></i> Enviar WhatsApp
-                                                    </a>
+                                                    <button onclick="enviarAn8n({{ $result->id }})" class="dropdown-item">
+                                                        <i class="mdi mdi-whatsapp me-2 text-success"></i> Reenviar WhatsApp
+                                                    </button>
                                                 </li>
                                             </ul>
                                         </div>
-                                    </td>
+                                    </td> --}}
                                 </tr>
                             @empty
                                 <tr>
@@ -181,3 +248,29 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    // Función simple para reenviar a n8n vía AJAX (si usas el botón extra)
+    function enviarAn8n(id) {
+        if(!confirm('¿Seguro que deseas reenviar la notificación?')) return;
+
+        fetch(`/resultados/${id}/send-n8n`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert('Enviado correctamente');
+            } else {
+                alert('Error al enviar: ' + data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+@endpush

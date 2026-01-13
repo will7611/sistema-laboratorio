@@ -32,4 +32,9 @@ class Result extends Model
             ? asset('storage/'.$this->pdf_path)
             : null;
     }
+    // Relación para saber quién validó el resultado
+    public function validator()
+    {
+        return $this->belongsTo(User::class, 'validated_by');
+    }
 }

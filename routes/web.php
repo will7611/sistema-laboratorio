@@ -67,5 +67,7 @@ Route::group(['middleware' => ['auth']], function() {
     Route::get('/', [ResultController::class, 'index'])->name('index');
     Route::get('/{id}/descargar', [ResultController::class, 'downloadPdf'])->name('download');
 });
-
+// Ruta para cambiar manualmente el estado de un RESULTADO
+Route::post('/resultados/{id}/status', [App\Http\Controllers\ResultController::class, 'updateStatus'])
+    ->name('resultados.updateStatus');
 });
