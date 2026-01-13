@@ -74,14 +74,14 @@
                     <div class="dropdown-menu dropdown-menu-end">
                         <!-- item-->
                         <h6 class="dropdown-header">{{auth()->user()->name}}!</h6>
-                        <a class="dropdown-item" href="pages-profile"><i
+                        {{-- <a class="dropdown-item" href="pages-profile"><i
                                 class="mdi mdi-account-circle text-muted fs-16 align-middle me-1"></i> <span
                                 class="align-middle">Perfil</span></a>
-                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-divider"></div> --}}
                        
-                        <a class="dropdown-item" href="pages-profile-settings"><i
+                        {{-- <a class="dropdown-item" href="pages-profile-settings"><i
                                 class="mdi mdi-cog-outline text-muted fs-16 align-middle me-1"></i> <span
-                                class="align-middle">Configuracion</span></a>
+                                class="align-middle">Configuracion</span></a> --}}
                         <form action="{{route('logout')}}" method="post">
                             @csrf
                             <button class="dropdown-item "><i class="bx bx-power-off font-size-16 align-middle me-1"></i> 

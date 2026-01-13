@@ -79,10 +79,14 @@
                                 <th># Orden</th>
                                 <th>Paciente</th>
                                 <th>Fecha Resultado</th>
+                                
+                                <!-- NUEVA COLUMNA: Notificación -->
+                                <th class="text-center" style="width: 140px;">Notificación</th>
+                                
                                 <th>Validado Por</th>
                                 <th class="text-center">Estado (Cambiar)</th>
                                 <th class="text-center">PDF</th>
-                                {{-- <th>Acciones</th> --}}
+                                <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -101,7 +105,10 @@
                                             {{ $result->orden->paciente->name ?? 'N/A' }} 
                                             {{ $result->orden->paciente->last_name ?? '' }}
                                         </h5>
-                                        <small class="text-muted">CI: {{ $result->orden->paciente->ci ?? '-' }}</small>
+                                        <small class="text-muted">
+                                            <i class="mdi mdi-whatsapp text-success"></i> 
+                                            {{ $result->orden->paciente->phone ?? 'Sin Teléfono' }}
+                                        </small>
                                     </td>
 
                                     <!-- FECHA -->
@@ -110,7 +117,35 @@
                                         {{ \Carbon\Carbon::parse($result->result_date)->format('d/m/Y') }}
                                     </td>
 
-                                    <!-- VALIDADO POR (NUEVO) -->
+                                    <!-- COLUMNA NOTIFICACIÓN (Lógica n8n) -->
+                                    <td class="text-center">
+                                        @php
+                                            // Buscamos si existe al menos un log EXITOSO
+                                            $ultimoLog = $result->logs->where('status', 'EXITOSO')->last();
+                                            $fallido = $result->logs->where('status', 'FALLIDO')->count() > 0;
+                                        @endphp
+
+                                        @if($ultimoLog)
+                                            <span class="badge bg-success font-size-12" title="{{ $ultimoLog->n8n_message }}">
+                                                <i class="mdi mdi-check-all"></i> Enviado
+                                            </span>
+                                            <div class="text-muted mt-1" style="font-size: 10px;">
+                                                {{ $ultimoLog->created_at->format('d/m H:i') }}
+                                            </div>
+                                        @else
+                                            @if($fallido)
+                                                <span class="badge bg-danger font-size-12">
+                                                    <i class="mdi mdi-alert"></i> Error
+                                                </span>
+                                            @else
+                                                <span class="badge bg-soft-secondary text-secondary font-size-12">
+                                                    No enviado
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </td>
+
+                                    <!-- VALIDADO POR -->
                                     <td>
                                         @if($result->validated_by)
                                             <span class="badge bg-soft-info text-info font-size-12">
@@ -118,14 +153,14 @@
                                                 {{ $result->validator->name ?? 'ID: ' . $result->validated_by }}
                                             </span>
                                             <div class="small text-muted mt-1">
-                                                {{ $result->validated_date ? \Carbon\Carbon::parse($result->validated_date)->format('d/m/Y H:i') : '' }}
+                                                {{ $result->validated_date ? \Carbon\Carbon::parse($result->validated_date)->format('d/m H:i') : '' }}
                                             </div>
                                         @else
                                             <span class="text-muted small fst-italic">- Pendiente -</span>
                                         @endif
                                     </td>
 
-                                    <!-- ESTADO CON BOTÓN DROPDOWN (NUEVO) -->
+                                    <!-- ESTADO CON BOTÓN DROPDOWN -->
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <button type="button" 
@@ -143,31 +178,25 @@
                                             </button>
                                             
                                             <ul class="dropdown-menu">
-                                                <!-- Opción: Validado -->
                                                 <li>
                                                     <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
                                                         @csrf
                                                         <input type="hidden" name="status" value="validado">
                                                         <button type="submit" class="dropdown-item">
-                                                            <i class="mdi mdi-check-circle text-info"></i> Marcar como Validado
+                                                            <i class="mdi mdi-check-circle text-info"></i> Marcar Validado
                                                         </button>
                                                     </form>
                                                 </li>
-
-                                                <!-- Opción: Entregado -->
                                                 <li>
                                                     <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
                                                         @csrf
                                                         <input type="hidden" name="status" value="entregado">
                                                         <button type="submit" class="dropdown-item">
-                                                            <i class="mdi mdi-check-all text-success"></i> Marcar como Entregado
+                                                            <i class="mdi mdi-check-all text-success"></i> Marcar Entregado
                                                         </button>
                                                     </form>
                                                 </li>
-
                                                 <li><hr class="dropdown-divider"></li>
-
-                                                <!-- Opción: Volver a Pendiente -->
                                                 <li>
                                                     <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
                                                         @csrf
@@ -194,31 +223,24 @@
                                         @endif
                                     </td>
 
-                                    <!-- ACCIONES EXTRA -->
-                                    {{-- <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                <i class="mdi mdi-dots-horizontal"></i>
+                                    <!-- ACCIONES (REENVIAR) -->
+                                    <td class="text-center">
+                                        @if($result->pdf_path)
+                                            <button onclick="enviarAn8n({{ $result->id }})" 
+                                                    class="btn btn-sm btn-outline-primary" 
+                                                    title="Enviar WhatsApp/Email">
+                                                <i class="mdi mdi-whatsapp font-size-16"></i>
                                             </button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <a class="dropdown-item" href="#">
-                                                        <i class="mdi mdi-eye me-2 text-primary"></i> Ver Detalle
-                                                    </a>
-                                                </li>
-                                                <!-- Botón Manual de Envío a n8n -->
-                                                <li>
-                                                    <button onclick="enviarAn8n({{ $result->id }})" class="dropdown-item">
-                                                        <i class="mdi mdi-whatsapp me-2 text-success"></i> Reenviar WhatsApp
-                                                    </button>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </td> --}}
+                                        @else
+                                            <button class="btn btn-sm btn-light" disabled>
+                                                <i class="mdi mdi-block-helper"></i>
+                                            </button>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4">
+                                    <td colspan="8" class="text-center py-4">
                                         <div class="avatar-sm mx-auto mb-3">
                                             <span class="avatar-title bg-light rounded-circle text-primary font-size-24">
                                                 <i class="mdi mdi-file-find"></i>
@@ -251,10 +273,15 @@
 
 @push('scripts')
 <script>
-    // Función simple para reenviar a n8n vía AJAX (si usas el botón extra)
+    // Función para enviar/reenviar notificación a n8n
     function enviarAn8n(id) {
-        if(!confirm('¿Seguro que deseas reenviar la notificación?')) return;
+        if(!confirm('¿Confirmas que deseas enviar los resultados por WhatsApp y Email al paciente?')) return;
 
+        // Feedback visual simple (cursor de espera)
+        document.body.style.cursor = 'wait';
+
+
+        // Asegúrate de que esta ruta '/resultados/{id}/send-n8n' exista en tus rutas
         fetch(`/resultados/${id}/send-n8n`, {
             method: 'POST',
             headers: {
@@ -264,13 +291,21 @@
         })
         .then(response => response.json())
         .then(data => {
+            document.body.style.cursor = 'default';
             if(data.success) {
-                alert('Enviado correctamente');
+                // Éxito: Recargamos para ver el badge verde
+                alert('¡Enviado correctamente!');
+                location.reload(); 
             } else {
-                alert('Error al enviar: ' + data.message);
+                // Error: Mostramos mensaje del servidor
+                alert('Error al enviar: ' + (data.message || 'Error desconocido'));
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            document.body.style.cursor = 'default';
+            console.error('Error:', error);
+            alert('Error de conexión. Revisa tu consola para más detalles.');
+        });
     }
 </script>
 @endpush

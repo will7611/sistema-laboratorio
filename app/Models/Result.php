@@ -37,4 +37,15 @@ class Result extends Model
     {
         return $this->belongsTo(User::class, 'validated_by');
     }
+        public function logs()
+    {
+        // Un resultado puede tener varios intentos de envío
+        return $this->hasMany(NotificationLog::class);
+    }
+
+    // Helper para saber si el último intento fue exitoso
+    public function getEstaEnviadoAttribute()
+    {
+        return $this->logs()->where('status', 'EXITOSO')->exists();
+    }
 }

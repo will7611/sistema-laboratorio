@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use App\Models\NotificationLog;
 use App\Models\Result;
 use App\Models\Orders;
 use Carbon\Carbon;
@@ -102,13 +103,13 @@ class ResultController extends Controller
     /**
      * MÉTODO PRIVADO: Centraliza la lógica de llamar a n8n.
      */
-    private function enviarPayloadAN8n(Result $resultado)
+       private function enviarPayloadAN8n(Result $resultado)
     {
         $resultado->load('orden.paciente');
         $paciente = $resultado->orden->paciente;
         
         // URL del Webhook de n8n definida en .env
-        $webhookUrl = config('services.n8n.resultados_webhook'); 
+        $webhookUrl = config('services.n8n.resultados_webhook'); // O usa env('N8N_RESULTADOS_WEBHOOK')
 
         if (!$webhookUrl) {
             $this->registrarNotificacion($resultado->id, 'error', 'Webhook n8n no configurado en .env');
@@ -123,26 +124,66 @@ class ResultController extends Controller
                 'nombre'   => $paciente->name,
                 'apellido' => $paciente->last_name,
                 'email'    => $paciente->email,
-                'telefono' => $paciente->phone, // Ej: 59170000000
+                'telefono' => $paciente->phone, 
             ],
-            'pdf_url'      => $resultado->url_pdf, // URL pública
+            'pdf_url'      => $resultado->url_pdf, 
             'estado'       => $resultado->status,
         ];
 
         try {
-            // Hacemos la petición POST a n8n
-            $response = Http::post($webhookUrl, $payload);
+            // Hacemos la petición POST a n8n (Agregamos timeout por seguridad)
+            $response = Http::timeout(30)->post($webhookUrl, $payload);
+            
+            // NUEVO: Capturamos la respuesta JSON de n8n para el log
+            $respuestaData = $response->json(); 
+            $mensajeN8n = $respuestaData['message'] ?? ($response->successful() ? 'Confirmado por n8n' : $response->body());
 
             if ($response->successful()) {
                 $resultado->update(['status' => 'enviado']);
                 $this->registrarNotificacion($resultado->id, 'enviado', null);
+
+                // NUEVO: Guardar en la tabla de Historial para la Bioquímica
+                NotificationLog::create([
+                    'result_id'     => $resultado->id,
+                    'patient_name'  => $paciente->name . ' ' . $paciente->last_name,
+                    'patient_phone' => $paciente->phone,
+                    'patient_email' => $paciente->email,
+                    'status'        => 'EXITOSO',
+                    'platform'      => 'n8n',
+                    'n8n_message'   => $mensajeN8n
+                ]);
+
                 return true;
             } else {
                 $this->registrarNotificacion($resultado->id, 'error', 'n8n error: ' . $response->body());
+                
+                // NUEVO: Guardar el fallo en el Historial
+                NotificationLog::create([
+                    'result_id'     => $resultado->id,
+                    'patient_name'  => $paciente->name . ' ' . $paciente->last_name,
+                    'patient_phone' => $paciente->phone,
+                    'patient_email' => $paciente->email,
+                    'status'        => 'FALLIDO',
+                    'platform'      => 'n8n',
+                    'n8n_message'   => 'Error HTTP: ' . $response->status() . ' - ' . $response->body()
+                ]);
+
                 return false;
             }
         } catch (\Exception $e) {
             $this->registrarNotificacion($resultado->id, 'error', 'Exception: ' . $e->getMessage());
+            
+            // NUEVO: Guardar el error de conexión en el Historial
+            NotificationLog::create([
+                'result_id'     => $resultado->id,
+                'patient_name'  => $paciente->name . ' ' . $paciente->last_name,
+                'patient_phone' => $paciente->phone,
+                'patient_email' => $paciente->email,
+                'status'        => 'ERROR_CONEXION',
+                'platform'      => 'n8n',
+                'n8n_message'   => $e->getMessage()
+            ]);
+
             return false;
         }
     }
