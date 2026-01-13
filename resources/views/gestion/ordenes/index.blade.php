@@ -32,7 +32,7 @@
                                 <th>#</th>
                                 <th>Paciente</th>
                                 <th>Fecha creación</th>
-                                <th>Estado</th>
+                                {{-- <th>Estado</th> --}}
                                 <th>Resultado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -43,7 +43,7 @@
                                     <td>{{ $orden->id }}</td>
                                     <td>{{ $orden->paciente->name }} {{ $orden->paciente->last_name }}</td>
                                     <td>{{ $orden->creation_date }}</td>
-                                    <td>{{ ucfirst($orden->status) }}</td>
+                                    {{-- <td>{{ ucfirst($orden->status) }}</td> --}}
 
                                     <td>
                                         @if($orden->resultado && $orden->resultado->pdf_path)
@@ -55,22 +55,29 @@
 
                                     <td>
                                         @if($orden->resultado && $orden->resultado->pdf_path)
-                                            <a href="{{ $orden->resultado->url_pdf }}" target="_blank" class="btn btn-sm btn-info">
-                                                Ver PDF
-                                            </a>
+        {{-- 1. VER PDF: Visible para TODOS (Pacientes, Recepción, etc.) --}}
+        <a href="{{ $orden->resultado->url_pdf }}" target="_blank" class="btn btn-sm btn-info">
+            Ver PDF
+        </a>
 
-                                            <button class="btn btn-sm btn-success btn-enviar-correo" 
-                                                    data-resultado-id="{{ $orden->resultado->id }}">
-                                                Enviar WhatsApp/Email
-                                            </button>
+        {{-- 2. ENVIAR: Solo Admin y Laboratorista pueden reenviar correos --}}
+        @hasanyrole('Admin|Laboratorista') {{-- [web:1][web:5] --}}
+            <button class="btn btn-sm btn-success btn-enviar-correo" 
+                    data-resultado-id="{{ $orden->resultado->id }}">
+                Enviar WhatsApp/Email
+            </button>
+        @endhasanyrole
 
-                                        @else
-                                            <button class="btn btn-sm btn-primary btn-cargar-pdf"
-                                                    data-resultado-id="{{ $orden->resultado->id ?? 0 }}"
-                                                    data-orden-id="{{ $orden->id }}">
-                                                Cargar PDF
-                                            </button>
-                                        @endif
+    @else
+        {{-- 3. CARGAR: Solo Admin y Laboratorista pueden subir archivos --}}
+        @hasanyrole('Admin|Laboratorista')
+            <button class="btn btn-sm btn-primary btn-cargar-pdf"
+                    data-resultado-id="{{ $orden->resultado->id ?? 0 }}"
+                    data-orden-id="{{ $orden->id }}">
+                Cargar PDF
+            </button>
+        @endhasanyrole
+    @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -82,7 +89,7 @@
     </div>
 </div>
 @endsection
-
+@role('Admin')
 {{-- Modal para subir PDF --}}
 <div class="modal fade" id="modalSubirPDF" tabindex="-1">
     <div class="modal-dialog">
@@ -107,7 +114,7 @@
         </form>
     </div>
 </div>
-
+@endrole
 @push('scripts')
 <script>
 $(document).ready(function(){

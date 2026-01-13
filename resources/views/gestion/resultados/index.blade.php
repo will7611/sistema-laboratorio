@@ -84,7 +84,7 @@
                                 <th class="text-center" style="width: 140px;">Notificación</th>
                                 
                                 <th>Validado Por</th>
-                                <th class="text-center">Estado (Cambiar)</th>
+                                <th class="text-center">Estado</th>
                                 <th class="text-center">PDF</th>
                                 {{-- <th class="text-center">Acciones</th> --}}
                             </tr>
@@ -160,54 +160,73 @@
                                         @endif
                                     </td>
 
-                                    <!-- ESTADO CON BOTÓN DROPDOWN -->
+                                    <!-- ESTADO (CONTROL DE ROLES APLICADO AQUÍ) -->
                                     <td class="text-center">
-                                        <div class="btn-group">
-                                            <button type="button" 
-                                                    class="btn btn-sm dropdown-toggle w-100 
-                                                    {{ $result->status == 'entregado' ? 'btn-success' : ($result->status == 'validado' ? 'btn-info' : 'btn-secondary') }}" 
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                        {{-- 1. SI ES ADMIN O LABORATORISTA: VE EL DROPDOWN --}}
+                                        @hasanyrole('Admin|Laboratorista')
+                                            <div class="btn-group">
+                                                <button type="button" 
+                                                        class="btn btn-sm dropdown-toggle w-100 
+                                                        {{ $result->status == 'entregado' ? 'btn-success' : ($result->status == 'validado' ? 'btn-info' : 'btn-secondary') }}" 
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                    
+                                                    @if($result->status == 'entregado')
+                                                        <i class="mdi mdi-check-all"></i> Entregado
+                                                    @elseif($result->status == 'validado')
+                                                        <i class="mdi mdi-check-circle"></i> Validado
+                                                    @else
+                                                        <i class="mdi mdi-clock-outline"></i> Pendiente
+                                                    @endif
+                                                </button>
                                                 
-                                                @if($result->status == 'entregado')
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
+                                                            @csrf
+                                                            <input type="hidden" name="status" value="validado">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="mdi mdi-check-circle text-info"></i> Marcar Validado
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    <li>
+                                                        <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
+                                                            @csrf
+                                                            <input type="hidden" name="status" value="entregado">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="mdi mdi-check-all text-success"></i> Marcar Entregado
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
+                                                            @csrf
+                                                            <input type="hidden" name="status" value="pendiente">
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="mdi mdi-undo text-secondary"></i> Volver a Pendiente
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        
+                                        {{-- 2. SI ES OTRO ROL (PACIENTE/RECEPCIÓN): SOLO LECTURA --}}
+                                        @else
+                                            @if($result->status == 'entregado')
+                                                <span class="badge bg-success font-size-12 p-2 w-100">
                                                     <i class="mdi mdi-check-all"></i> Entregado
-                                                @elseif($result->status == 'validado')
+                                                </span>
+                                            @elseif($result->status == 'validado')
+                                                <span class="badge bg-info font-size-12 p-2 w-100">
                                                     <i class="mdi mdi-check-circle"></i> Validado
-                                                @else
+                                                </span>
+                                            @else
+                                                <span class="badge bg-secondary font-size-12 p-2 w-100">
                                                     <i class="mdi mdi-clock-outline"></i> Pendiente
-                                                @endif
-                                            </button>
-                                            
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
-                                                        @csrf
-                                                        <input type="hidden" name="status" value="validado">
-                                                        <button type="submit" class="dropdown-item">
-                                                            <i class="mdi mdi-check-circle text-info"></i> Marcar Validado
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
-                                                        @csrf
-                                                        <input type="hidden" name="status" value="entregado">
-                                                        <button type="submit" class="dropdown-item">
-                                                            <i class="mdi mdi-check-all text-success"></i> Marcar Entregado
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <form action="{{ route('resultados.updateStatus', $result->id) }}" method="POST">
-                                                        @csrf
-                                                        <input type="hidden" name="status" value="pendiente">
-                                                        <button type="submit" class="dropdown-item">
-                                                            <i class="mdi mdi-undo text-secondary"></i> Volver a Pendiente
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                            </ul>
-                                        </div>
+                                                </span>
+                                            @endif
+                                        @endhasanyrole
                                     </td>
 
                                     <!-- PDF -->
@@ -223,7 +242,7 @@
                                         @endif
                                     </td>
 
-                                    <!-- ACCIONES (REENVIAR) -->
+                                    <!-- ACCIONES (REENVIAR) - COMENTADO COMO EN EL ORIGINAL -->
                                     {{-- <td class="text-center">
                                         @if($result->pdf_path)
                                             <button onclick="enviarAn8n({{ $result->id }})" 
@@ -279,7 +298,6 @@
 
         // Feedback visual simple (cursor de espera)
         document.body.style.cursor = 'wait';
-
 
         // Asegúrate de que esta ruta '/resultados/{id}/send-n8n' exista en tus rutas
         fetch(`/resultados/${id}/send-n8n`, {
