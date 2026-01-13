@@ -131,7 +131,7 @@
                         <h4 class="fs-22 fw-semibold ff-secondary mb-4">
                             <span>Bs </span><span class="counter-value" data-target="{{ $ingresosHoy ?? 0 }}">0</span>
                         </h4>
-                        <a href="#" class="text-decoration-underline text-muted">Ver reporte</a>
+                        {{-- <a href="#" class="text-decoration-underline text-muted">Ver reporte</a> --}}
                     </div>
                     <div class="avatar-sm flex-shrink-0">
                         <span class="avatar-title bg-soft-success text-success rounded fs-3">
