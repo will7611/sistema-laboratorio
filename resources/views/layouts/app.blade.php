@@ -1,94 +1,9 @@
-{{-- 
-<!doctype html >
-<html lang="en" data-layout="twocolumn" data-sidebar="light" data-sidebar-size="lg" data-sidebar-image="none">
-
-<head>
-    <meta charset="utf-8" />
-    <title> translation.starter  | Velzon - Admin & Dashboard Template</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta content="Premium Multipurpose Admin & Dashboard Template" name="description" />
-    <meta content="Themesbrand" name="author" />
-    <!-- App favicon -->
-    <link rel="shortcut icon" href="http://localhost/creative2/public/assets/images/favicon.ico">
-    <!-- Layout config Js -->
-<script src="http://localhost/creative2/public/assets/js/layout.js"></script>
-<!-- Bootstrap Css -->
-<link href="http://localhost/creative2/public/assets/css/bootstrap.min.css" id="bootstrap-style" rel="stylesheet" type="text/css" />
-<!-- Icons Css -->
-<link href="http://localhost/creative2/public/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
-<!-- App Css-->
-<link href="http://localhost/creative2/public/assets/css/app.min.css" id="app-style" rel="stylesheet" type="text/css" />
-<!-- custom Css-->
-<link href="http://localhost/creative2/public/assets/css/custom.min.css" id="app-style" rel="stylesheet" type="text/css" />
-
-</head>
-
-    <body>
-
-<!-- <body data-layout="horizontal"> -->
-    <!-- Begin page -->
-    <div id="layout-wrapper">
-<x-header-component/>
-        <!-- ========== App Menu ========== -->
-<x-menu-component/>
-<!-- Left Sidebar End -->
-<!-- Vertical Overlay-->
-<div class="vertical-overlay"></div>
-        <!-- ============================================================== -->
-        <!-- Start right Content here -->
-        <!-- ============================================================== -->
-        <div class="main-content">
-            <div class="page-content">
-                <div class="container-fluid">
-                    <!-- start page title -->
-<div class="row">
-    <div class="col-12">
-        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0 font-size-18">Starter</h4>
-
-            <div class="page-title-right">
-                <ol class="breadcrumb m-0">
-                    <li class="breadcrumb-item"><a href="javascript: void(0);">Pages</a></li>
-                                            <li class="breadcrumb-item active">Starter</li>
-                                    </ol>
-            </div>
-
-        </div>
-    </div>
-</div>
-<!-- end page title -->
-                </div>
-                <!-- container-fluid -->
-            </div>
-            <!-- End Page-content -->
-<x-footer-component/>
-        </div>
-        <!-- end main content-->
-    </div>
-    <!-- END layout-wrapper -->
-
-<x-button-component/>
-
-    <!-- JAVASCRIPT -->
-    <script src="http://localhost/creative2/public/assets/libs/bootstrap/bootstrap.min.js"></script>
-<script src="http://localhost/creative2/public/assets/libs/simplebar/simplebar.min.js"></script>
-<script src="http://localhost/creative2/public/assets/libs/node-waves/node-waves.min.js"></script>
-<script src="http://localhost/creative2/public/assets/libs/feather-icons/feather-icons.min.js"></script>
-<script src="http://localhost/creative2/public/assets/js/pages/plugins/lord-icon-2.1.0.min.js"></script>
-<script src="http://localhost/creative2/public/assets/js/plugins.min.js"></script>
-<script src="http://localhost/creative2/public/assets/js/app.min.js"></script>
-</body>
-
-</html> --}}
-
-
-
-
 
 <!doctype html >
 <html lang="en" data-layout="twocolumn" data-sidebar="light" data-sidebar-size="lg" data-sidebar-image="none">
 
 <head>
+    <base href="{{ url('/') }}/">
     <meta charset="utf-8" />
     <title>@yield('title-head', 'Sistema - Laboratorio')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -121,6 +36,7 @@
 <!-- custom Css-->
 <link href="{{asset('assets/css/custom.min.css')}}" id="app-style" rel="stylesheet" type="text/css" />
 <link rel="stylesheet" href="{{asset('css/styles.css')}}">
+@vite(['resources/js/app.js'])
 </head>
 
     <body>
@@ -168,8 +84,8 @@
 
 
     <!-- JAVASCRIPT -->
-    
-<script src="{{asset('assets/js/app.min.js')}}"></script>
+
+{{-- <script src="{{asset('assets/js/app.min.js')}}"></script> --}}
     <script src="{{asset('assets/libs/bootstrap/bootstrap.min.js')}}"></script>
 <script src="{{asset('assets/libs/simplebar/simplebar.min.js')}}"></script>
 <script src="{{asset('assets/libs/node-waves/node-waves.min.js')}}"></script>
@@ -216,7 +132,7 @@
                 // Si el formulario es válido (checkValidity es nativo de HTML5)
                 if (this.checkValidity()) {
                     loader.style.display = 'flex';
-                    
+
                     // Deshabilitar el botón submit para evitar dobles clics
                     const submitBtn = this.querySelector('button[type="submit"]');
                     if(submitBtn) {
@@ -234,11 +150,11 @@
             link.addEventListener('click', function(e) {
                 const href = this.getAttribute('href');
                 const target = this.getAttribute('target');
-                
+
                 // Solo activar si es un enlace real interno y no abre en nueva pestaña
-                if (href && 
-                    !href.startsWith('#') && 
-                    !href.startsWith('javascript') && 
+                if (href &&
+                    !href.startsWith('#') &&
+                    !href.startsWith('javascript') &&
                     target !== '_blank') {
                     loader.style.display = 'flex';
                 }
@@ -252,7 +168,100 @@
             }
         });
     });
+
 </script>
+
+
+<!-- ============================================================== -->
+<!-- SCRIPT MAESTRO DE NOTIFICACIONES (TOAST + CAMPANA + PERSISTENCIA) -->
+<!-- ============================================================== -->
+<script type="module">
+    document.addEventListener("DOMContentLoaded", function() {
+        let contador = {{ \Illuminate\Support\Facades\DB::table('sys_notifications')->where('notifiable_id', auth()->id())->whereNull('read_at')->count() }};
+        
+        function updateUI() {
+            const badge = document.getElementById('notif-badge');
+            const textCount = document.getElementById('notif-text-count');
+            if(badge) {
+                badge.innerText = contador;
+                badge.style.display = contador > 0 ? 'block' : 'none';
+            }
+            if(textCount) textCount.innerText = contador + ' Nuevas';
+        }
+
+        function inicializarEcho() {
+            if (typeof window.Echo === 'undefined') {
+                setTimeout(inicializarEcho, 200);
+                return;
+            }
+
+            window.Echo.channel('laboratorio-notificaciones')
+                .listen('.App\\Events\\ProformaAceptada', (evento) => {
+                    
+                    // --- INSTANCIA CON PRIORIDAD MÁXIMA ---
+                    const NotificacionFlotante = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 8000,
+                        timerProgressBar: true,
+                        // ESTO ES CLAVE: Ponemos el Toast por encima de todo (incluso del modal de confirmación)
+                        customClass: {
+                            container: 'my-swal-container'
+                        },
+                        didOpen: (toast) => {
+                            toast.style.cursor = 'pointer';
+                            // Aseguramos que el clic funcione ignorando capas superiores
+                            toast.onclick = (e) => {
+                                e.stopPropagation();
+                                window.location.href = `/notificaciones/orden/${evento.proforma_id}`;
+                            };
+                        }
+                    });
+
+                    NotificacionFlotante.fire({
+                        icon: 'success',
+                        title: '¡Nueva Orden!',
+                        html: `<b>#${evento.proforma_id}</b><br>Paciente: ${evento.paciente_nombre}<br><small>(Clic aquí para ver)</small>`
+                    });
+
+                    // --- ACTUALIZAR CAMPANA ---
+                    contador++;
+                    updateUI();
+
+                    const listAll = document.getElementById('notif-list-all');
+                    if (listAll) {
+                        const container = listAll.querySelector('.simplebar-content') || listAll;
+                        let newItem = `
+                            <div class="text-reset notification-item d-block dropdown-item border-bottom bg-light animate__animated animate__fadeInDown">
+                                <div class="d-flex">
+                                    <div class="avatar-xs me-3 flex-shrink-0">
+                                        <span class="avatar-title bg-soft-success text-success rounded-circle fs-16"><i class="bx bx-check-double"></i></span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <a href="/notificaciones/orden/${evento.proforma_id}" class="stretched-link">
+                                            <h6 class="mt-0 mb-1 fs-13 fw-semibold">Orden #${evento.proforma_id}</h6>
+                                        </a>
+                                        <div class="fs-12 text-muted"><p class="mb-1">Paciente: ${evento.paciente_nombre}</p></div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        container.insertAdjacentHTML('afterbegin', newItem);
+                        const empty = document.getElementById('notif-empty-state');
+                        if(empty) empty.style.display = 'none';
+                    }
+                });
+        }
+        inicializarEcho();
+    });
+</script>
+
+<style>
+/* Forzamos que el contenedor de toasts esté por encima de los modales de confirmación */
+.my-swal-container {
+    z-index: 999999 !important;
+}
+</style>
  @stack('scripts')
 
 </body>

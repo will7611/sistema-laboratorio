@@ -53,4 +53,19 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+     public function notifications()
+    {
+        // Ahora usamos nuestro modelo personalizado
+        return $this->morphMany(SysNotification::class, 'notifiable')
+                    ->orderBy('created_at', 'desc');
+    }
+    public function readNotifications()
+    {
+        return $this->notifications()->whereNotNull('read_at');
+    }
+
+    public function unreadNotifications()
+    {
+        return $this->notifications()->whereNull('read_at');
+    }
 }

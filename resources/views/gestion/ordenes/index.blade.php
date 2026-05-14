@@ -61,7 +61,7 @@
         </a>
 
         {{-- 2. ENVIAR: Solo Admin y Laboratorista pueden reenviar correos --}}
-        @hasanyrole('Admin|Laboratorista') {{-- [web:1][web:5] --}}
+        @hasanyrole('Admin|Bioquimica') {{-- [web:1][web:5] --}}
             <button class="btn btn-sm btn-success btn-enviar-correo" 
                     data-resultado-id="{{ $orden->resultado->id }}">
                 Enviar WhatsApp/Email
@@ -70,7 +70,7 @@
 
     @else
         {{-- 3. CARGAR: Solo Admin y Laboratorista pueden subir archivos --}}
-        @hasanyrole('Admin|Laboratorista')
+        @hasanyrole('Admin|Bioquimica')
             <button class="btn btn-sm btn-primary btn-cargar-pdf"
                     data-resultado-id="{{ $orden->resultado->id ?? 0 }}"
                     data-orden-id="{{ $orden->id }}">

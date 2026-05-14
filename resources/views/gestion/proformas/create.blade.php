@@ -30,20 +30,29 @@
                 <form id="form-proforma" action="{{ route('proformas.store') }}" method="POST">
                     @csrf
                     <div class="row mb-4">
-                        {{-- PACIENTE --}}
+                        {{-- PACIENTE (BÚSQUEDA Y RECIENTES) --}}
                         <div class="col-md-6">
-                            <label class="form-label">Paciente</label>
-                            <select name="paciente_id" class="form-select" required>
-                                <option value="">-- Seleccione un paciente --</option>
-                                @foreach ($pacientes as $paciente)
-                                    <option value="{{ $paciente->id }}">
-                                        {{ $paciente->name }} {{ $paciente->last_name }} ({{ $paciente->ci }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <label class="form-label">Paciente <small class="text-muted">(buscar por nombre o CI)</small></label>
+                            <div class="input-group">
+                                <input type="text" 
+                                       id="buscar-paciente" 
+                                       class="form-control" 
+                                       placeholder="Escriba nombre o CI del paciente..."
+                                       autocomplete="off">
+                                <div class="input-group-text">
+                                    <i class="bx bx-search"></i>
+                                </div>
+                            </div>
+                            <div id="resultados-pacientes" class="position-relative mt-1">
+                                <div class="dropdown-menu w-100 shadow border-1 border-primary" id="lista-pacientes" style="display: none; max-height: 350px; overflow-y: auto; position: absolute; z-index: 1000;">
+                                    <!-- Se llenará dinámicamente con AJAX -->
+                                </div>
+                            </div>
+                            <input type="hidden" name="paciente_id" id="paciente_id" required>
+                            <div id="info-paciente-seleccionado" class="mt-1 small text-success fw-bold"></div>
                         </div>
 
-                        {{-- BUSCADOR --}}
+                        {{-- BUSCADOR ANÁLISIS --}}
                         <div class="col-md-6">
                             <label class="form-label">Buscar análisis</label>
                             <input type="text" id="buscar-analisis" class="form-control" placeholder="Ej: hemograma, glucosa, orina...">
@@ -53,7 +62,7 @@
                     {{-- TABLA DE ANÁLISIS --}}
                     <h5 class="mb-3">Análisis clínicos</h5>
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" style="min-height: 300px;">
                         <table class="table table-bordered align-middle" id="tabla-analisis-proforma">
                             <thead class="table-light">
                                 <tr>
@@ -136,26 +145,164 @@
 
 @push('scripts')
 <script>
-    // --- CONFIGURACIÓN PAGINACIÓN ---
+    // --- VARIABLES GLOBALES ---
     const FILAS_POR_PAGINA = 10;
     let paginaActual = 1;
     let filasVisibles = []; 
-
+    
     $(document).ready(function() {
-        // Inicializar: guardar todas las filas como visibles al principio
+        // Inicializar Análisis
         filasVisibles = $('.fila-analisis').toArray();
         actualizarTabla();
     });
 
-    // —— Función para normalizar texto (quita acentos) ——
+    // —— Funciones Utilitarias ——
     function normalizar(texto) {
-        return texto
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase();
+        if (!texto) return "";
+        return String(texto).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     }
 
-    // —— Lógica de Paginación y Renderizado ——
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), wait);
+        };
+    }
+
+    // ==========================================
+    // LÓGICA DE PACIENTES (BÚSQUEDA AJAX)
+    // ==========================================
+    
+    function buscarPacientesAjax(termino) {
+        const urlBusqueda = '{{ route("pacientes.search.ajax") }}';
+        console.log("1. Intentando buscar en la URL:", urlBusqueda);
+        console.log("2. Término a buscar:", termino);
+
+        const $lista = $('#lista-pacientes');
+        $lista.html('<div class="dropdown-item text-center text-muted p-2"><i class="bx bx-loader-alt bx-spin"></i> Buscando...</div>').show();
+
+        $.ajax({
+            url: urlBusqueda,
+            method: 'GET',
+            data: { search: termino }, 
+            success: function(data) {
+                console.log("3. ¡Éxito! Datos recibidos del servidor:", data);
+                
+                let res = Array.isArray(data.resultados) ? data.resultados : [];
+                let rec = Array.isArray(data.recientes) ? data.recientes : [];
+                
+                renderizarLista(res, rec, termino);
+            },
+            error: function(xhr, status, error) {
+                console.error("3. ERROR en AJAX");
+                console.error("Status:", status);
+                console.error("Error string:", error);
+                console.error("Response:", xhr.responseText);
+                
+                $lista.html('<div class="dropdown-item text-center text-danger p-2 text-wrap" style="white-space: normal;">Error de conexión. Revisa la consola (F12)</div>').show();
+            }
+        });
+    }
+
+    function renderizarLista(resultados, recientes, termino) {
+        const $lista = $('#lista-pacientes');
+        let html = '';
+
+        // ESCENARIO 1: El usuario escribió algo (Mostrar resultados de TODA la tabla)
+        if (termino.length > 0) {
+            html += '<div class="dropdown-header bg-primary text-white p-2 fw-bold">🔍 RESULTADOS DE BÚSQUEDA GENERAL</div>';
+            
+            if (resultados.length > 0) {
+                resultados.forEach(p => html += crearItemHTML(p, false));
+            } else {
+                html += '<div class="dropdown-item text-center text-muted p-2">No hay coincidencias para "'+termino+'"</div>';
+            }
+        } 
+        // ESCENARIO 2: El input está vacío (Mostrar SOLO los recientes)
+        else {
+            html += '<div class="dropdown-header bg-success text-white p-2 fw-bold">👥 PACIENTES CREADOS RECIENTEMENTE</div>';
+            
+            if (recientes.length > 0) {
+                recientes.forEach(p => html += crearItemHTML(p, true));
+            } else {
+                html += '<div class="dropdown-item text-center text-muted p-2">No hay pacientes registrados recientemente</div>';
+            }
+        }
+
+        $lista.html(html).show();
+    }
+
+    function crearItemHTML(paciente, esReciente) {
+        let apellido = paciente.last_name ? paciente.last_name : '';
+        let ci = paciente.ci ? paciente.ci : 'S/N';
+        let badge = esReciente ? '<span class="badge bg-success-subtle text-success">Nuevo</span>' : '';
+
+        return `
+            <a class="dropdown-item paciente-resultado p-2 border-bottom" 
+               href="#" data-id="${paciente.id}" data-name="${paciente.name} ${apellido}" data-ci="${ci}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong class="text-dark">${paciente.name} ${apellido}</strong>
+                    ${badge}
+                </div>
+                <small class="text-muted"><i class="bx bx-id-card"></i> CI: ${ci}</small>
+            </a>
+        `;
+    }
+
+   // ==========================================
+    // EVENTOS DEL INPUT PACIENTE
+    // ==========================================
+
+    // Al hacer click, si está vacío, busca los recientes de hoy
+    $('#buscar-paciente').on('click focus', function(e) {
+        e.stopPropagation();
+        const termino = $(this).val() || '';
+        
+        if(termino.trim() === '') {
+            buscarPacientesAjax(''); 
+        } else {
+            $('#lista-pacientes').show(); 
+        }
+    });
+
+    // Al teclear, busca en toda la base de datos
+    // NOTA: Eliminamos $(this) dentro del debounce y pasamos el valor directamente
+    $('#buscar-paciente').on('input', function(e) {
+        const termino = $(this).val() || '';
+        ejecutarBusquedaDebounced(termino.trim());
+    });
+
+    // Definimos el debounce fuera del evento para que no pierda el contexto
+    const ejecutarBusquedaDebounced = debounce(function(termino) {
+        buscarPacientesAjax(termino);
+    }, 400);
+
+    // SELECCIONAR PACIENTE DE LA LISTA
+    $(document).on('click', '.paciente-resultado', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const id = $(this).data('id');
+        const nombre = $(this).data('name');
+        const ci = $(this).data('ci');
+        
+        $('#paciente_id').val(id); 
+        $('#buscar-paciente').val(nombre); 
+        $('#info-paciente-seleccionado').html(`✅ Seleccionado: <strong>${nombre}</strong> (CI: ${ci})`);
+        $('#lista-pacientes').hide();
+    });
+
+    // OCULTAR LISTA AL HACER CLICK FUERA
+    $(document).click(function(e) {
+        if (!$(e.target).closest('#buscar-paciente').length && !$(e.target).closest('#lista-pacientes').length) {
+            $('#lista-pacientes').hide();
+        }
+    });
+
+    // ==========================================
+    // LÓGICA DE ANÁLISIS (PAGINACIÓN, BÚSQUEDA Y TOTALES)
+    // ==========================================
     function actualizarTabla() {
         const totalFilas = filasVisibles.length;
         const totalPaginas = Math.ceil(totalFilas / FILAS_POR_PAGINA);
@@ -163,14 +310,12 @@
         if (paginaActual < 1) paginaActual = 1;
         if (paginaActual > totalPaginas && totalPaginas > 0) paginaActual = totalPaginas;
 
-        // Ocultar todas primero
         $('.fila-analisis').hide();
 
         if (totalFilas > 0) {
             const inicio = (paginaActual - 1) * FILAS_POR_PAGINA;
             const fin = inicio + FILAS_POR_PAGINA;
             
-            // Mostrar solo las de esta página
             const filasA_Mostrar = filasVisibles.slice(inicio, fin);
             $(filasA_Mostrar).show();
 
@@ -180,28 +325,19 @@
             $('#info-paginacion').text('No se encontraron resultados');
         }
 
-        // Estado botones
         $('#btn-prev').prop('disabled', paginaActual === 1 || totalFilas === 0);
         $('#btn-next').prop('disabled', paginaActual >= totalPaginas || totalFilas === 0);
     }
 
-    // —— Eventos Botones Paginación ——
     $('#btn-prev').click(function() {
-        if (paginaActual > 1) {
-            paginaActual--;
-            actualizarTabla();
-        }
+        if (paginaActual > 1) { paginaActual--; actualizarTabla(); }
     });
 
     $('#btn-next').click(function() {
         const totalPaginas = Math.ceil(filasVisibles.length / FILAS_POR_PAGINA);
-        if (paginaActual < totalPaginas) {
-            paginaActual++;
-            actualizarTabla();
-        }
+        if (paginaActual < totalPaginas) { paginaActual++; actualizarTabla(); }
     });
 
-    // —— Buscador ——
     $(document).on('input', '#buscar-analisis', function () {
         const texto = normalizar($(this).val());
         
@@ -215,8 +351,6 @@
         actualizarTabla();
     });
 
-    // —— Cálculos de Subtotal y Total ——
-    // estricto = true (fuerza a 1 si está vacío), estricto = false (permite vacío mientras escribes)
     function recalcularFila($fila, estricto = false) {
         const checked = $fila.find('.chk-analisis').is(':checked');
         const precio  = parseFloat($fila.find('.precio').data('precio')) || 0;
@@ -234,18 +368,13 @@
 
         let cantidad = parseInt($inputCantidad.val());
 
-        // Lógica corregida para permitir edición fluida
         if (estricto) {
-            // Si es estricto (blur o check), forzamos a 1 si es inválido
             if (isNaN(cantidad) || cantidad < 1) {
                 cantidad = 1;
                 $inputCantidad.val(1);
             }
         } else {
-            // Si no es estricto (input), permitimos vacío o 0 visualmente, pero calculamos con 0
-            if (isNaN(cantidad) || cantidad < 0) {
-                cantidad = 0; 
-            }
+            if (isNaN(cantidad) || cantidad < 0) { cantidad = 0; }
         }
 
         const subtotal = precio * cantidad;
@@ -256,63 +385,48 @@
         let total = 0;
         $('.fila-analisis').each(function() {
             const sub = parseFloat($(this).find('.subtotal').text());
-            if (!isNaN(sub)) {
-                total += sub;
-            }
+            if (!isNaN(sub)) total += sub;
         });
         $('#total-proforma').text(total.toFixed(2));
     }
 
-    // —— Eventos Inputs ——
-    
-    // 1. Checkbox: Validación estricta
     $(document).on('change', '.chk-analisis', function() {
-        const $fila = $(this).closest('tr');
-        recalcularFila($fila, true);
+        recalcularFila($(this).closest('tr'), true);
         recalcularTotal();
     });
 
-    // 2. Escribir: Validación suave (permite borrar)
     $(document).on('input', '.input-cantidad', function() {
-        const $fila = $(this).closest('tr');
-        recalcularFila($fila, false);
+        recalcularFila($(this).closest('tr'), false);
         recalcularTotal();
     });
 
-    // 3. Salir del input: Validación estricta (rellena con 1 si estaba vacío)
     $(document).on('blur', '.input-cantidad', function() {
-        const $fila = $(this).closest('tr');
-        recalcularFila($fila, true);
+        recalcularFila($(this).closest('tr'), true);
         recalcularTotal();
     });
 
-    // —— AJAX Setup ——
+    // ==========================================
+    // ENVÍO DE FORMULARIO
+    // ==========================================
     $.ajaxSetup({
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
     });
 
-    // —— Envío Formulario ——
     $('#form-proforma').on('submit', function(e) {
         e.preventDefault();
         let $form = $(this);
 
-        // Validar Paciente
-        const pacienteId = $form.find('select[name="paciente_id"]').val();
+        const pacienteId = $('#paciente_id').val();
         if (!pacienteId) {
-            Swal.fire({ icon: 'warning', title: 'Falta Información', text: 'Por favor seleccione un paciente.' });
+            Swal.fire({ icon: 'warning', title: 'Falta Información', text: 'Por favor seleccione un paciente de la lista.' });
             return;
         }
 
-        // Recolectar Items Seleccionados
         let items = [];
         $('.fila-analisis').each(function() {
             const $fila = $(this);
             if ($fila.find('.chk-analisis').is(':checked')) {
-                // Asegurar cantidad válida al enviar
                 let cant = parseInt($fila.find('.input-cantidad').val()) || 1;
-                
                 items.push({
                     analysis_id: $fila.find('.analisis-id').val(),
                     cantidad:    cant
@@ -325,7 +439,6 @@
             return;
         }
 
-        // Enviar
         $.ajax({
             url: $form.attr('action'),
             method: 'POST',

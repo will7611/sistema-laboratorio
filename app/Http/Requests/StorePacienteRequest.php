@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon; // No olvides importar Carbon
 
 class StorePacienteRequest extends FormRequest
 {
@@ -39,6 +40,8 @@ class StorePacienteRequest extends FormRequest
         // Si estás usando Route::resource('pacientes', ...),
         // en update Laravel inyecta {paciente}
         $pacienteId = optional($this->route('paciente'))->id;
+        // Calculamos la fecha límite (hace 120 años exactos desde hoy)
+        $fechaLimite = Carbon::now()->subYears(120)->format('Y-m-d');
         return [
             'name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -52,7 +55,14 @@ class StorePacienteRequest extends FormRequest
                 Rule::unique('pacientes', 'ci')->ignore($pacienteId),
             ],
 
-            'birth_date' => ['nullable', 'date'],
+            // Validación de fecha de nacimiento: No en el futuro y máximo 120 años de antigüedad
+            'birth_date' => [
+                'nullable', 
+                'date',
+                'before_or_equal:today', // Edad no menor a 0
+                'after_or_equal:' . $fechaLimite // Edad no mayor a 120 años
+            ],
+
             'phone' => ['nullable', 'string', 'max:30'],
 
             // Email opcional pero único si existe
@@ -74,6 +84,10 @@ class StorePacienteRequest extends FormRequest
             'ci.unique' => 'Este CI ya está registrado.',
             'email.unique' => 'Este correo ya está registrado.',
             'email.email' => 'El correo no tiene un formato válido.',
+
+            // Mensajes para la fecha de nacimiento
+            'birth_date.before_or_equal' => 'La fecha de nacimiento no puede ser en el futuro.',
+            'birth_date.after_or_equal' => 'La fecha de nacimiento indica una edad no válida (mayor a 120 años).',
         ];
     }
 }

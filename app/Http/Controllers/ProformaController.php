@@ -12,6 +12,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Events\ProformaAceptada;
+use App\Notifications\OrdenGeneradaNotification; // La notificación que creamos
+use App\Models\User;                             // El modelo de usuario
+use Illuminate\Support\Facades\Notification;     // La fachada para enviar 
 
 class ProformaController extends Controller
 {
@@ -30,9 +34,9 @@ class ProformaController extends Controller
      */
     public function create()
     {
-        $pacientes = Paciente::orderBy('name')->get();
+        //$pacientes = Paciente::orderBy('name')->get();
         $analisis  = Analysis::where('status', true)->orderBy('name')->get();
-        return view('gestion.proformas.create', compact('pacientes', 'analisis'));
+        return view('gestion.proformas.create', compact('analisis'));
     }
 
     /**
@@ -110,7 +114,7 @@ class ProformaController extends Controller
                 ->withInput();
         }
     }
-
+   
     /**
      * Display the specified resource.
      */
@@ -148,12 +152,16 @@ class ProformaController extends Controller
         // 4. Retornar vista
         return view('gestion.proformas.edit', compact('proforma', 'pacientes', 'analisis'));
     }
-    // Aceptar proforma y crear orden+resultado
+  /**
+     * Aceptar proforma y crear orden + resultado.
+     * Notifica a Admin, Bioquimica y Secretaria.
+     */
     public function aceptar(Request $request, Proforma $proforma)
     {
         try {
             DB::beginTransaction();
 
+            // Evitar duplicados: Si ya existe una orden, solo actualizamos estado si es necesario
             if ($proforma->orden) {
                 if ($proforma->status !== 'aceptada') {
                     $proforma->update(['status' => 'aceptada']);
@@ -164,53 +172,81 @@ class ProformaController extends Controller
                 if ($request->ajax()) {
                     return response()->json([
                         'success'  => true,
-                        'message'  => 'La proforma ya tenía orden creada.',
+                        'message'  => 'La proforma ya tiene una orden asociada.',
                         'proforma' => $proforma->load('orden'),
                     ]);
                 }
 
-                return back()->with('info', 'La proforma ya había sido aceptada.');
+                return back()->with('info', 'Esta proforma ya había sido procesada.');
             }
 
+            // 1. Actualizar estado de la proforma
             $proforma->update(['status' => 'aceptada']);
 
+            // 2. Crear la Orden de Trabajo
             $orden = Orders::create([
                 'paciente_id'   => $proforma->paciente_id,
                 'proforma_id'   => $proforma->id,
                 'creation_date' => Carbon::now(),
-                'status'        => 'pendiente',
+                'status'        => 'pendiente', // Estado inicial para Bioquímica
             ]);
 
+            // 3. Crear el Registro de Resultado (vacío)
             $resultado = Result::create([
                 'order_id' => $orden->id,
                 'status'   => 'pendiente',
             ]);
 
+            // 4. Confirmar cambios en la DB antes de disparar eventos externos
             DB::commit();
 
+            // -----------------------------------------------------------------
+            // 5. SISTEMA DE NOTIFICACIONES (Roles: Admin, Bioquimica, Secretaria)
+            // -----------------------------------------------------------------
+            
+            $proforma->load('paciente');
+            $nombrePaciente = trim(($proforma->paciente->name ?? 'Paciente') . ' ' . ($proforma->paciente->last_name ?? ''));
+            
+            // Filtramos usuarios por los 3 roles definidos en tu Seeder
+            // Esto asegura que la notificación llegue a las áreas correctas
+            $usuariosDestino = User::role(['Admin', 'Bioquimica', 'Secretaria'])->get();
+            
+            if ($usuariosDestino->count() > 0) {
+                // A. Persistencia en Base de Datos (para la campana/header)
+                Notification::send($usuariosDestino, new OrdenGeneradaNotification($proforma->id, $nombrePaciente));
+
+                // B. Tiempo Real con Reverb (para el Toast/aviso emergente)
+                // Asegúrate de que el evento use 'ShouldBroadcastNow' para inmediatez
+                ProformaAceptada::dispatch($proforma->id, $nombrePaciente);
+            }
+            // -----------------------------------------------------------------
+
+            // Respuesta exitosa
             if ($request->ajax()) {
                 return response()->json([
                     'success'   => true,
-                    'message'   => 'Proforma aceptada y orden creada correctamente.',
+                    'message'   => 'Proforma aceptada. Orden #'.$orden->id.' generada correctamente.',
                     'proforma'  => $proforma->load('orden'),
                     'orden'     => $orden,
                     'resultado' => $resultado,
                 ]);
             }
 
-            return back()->with('success', 'Proforma aceptada y orden creada.');
+            return back()->with('success', 'Orden generada con éxito.');
+            
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error("Error al aceptar proforma ID {$proforma->id}: " . $e->getMessage());
 
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al aceptar la proforma.',
+                    'message' => 'Ocurrió un error al procesar la solicitud.',
                     'error'   => $e->getMessage(),
                 ], 500);
             }
 
-            return back()->withErrors('Error al aceptar la proforma: ' . $e->getMessage());
+            return back()->withErrors('Error: ' . $e->getMessage());
         }
     }
    public function detalles($id)

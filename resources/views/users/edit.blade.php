@@ -28,7 +28,7 @@
             </div>
         </div><!--end col-->
         <div class="col-xxl-4">
-             <div>
+        <div> 
         <label for="lastName" class="form-label">Rol</label>
         <div class="form-check p-0">
             <select name="role[]" class="form-control @error('role') is-invalid @enderror" multiple="multiple">
@@ -47,8 +47,8 @@
             @enderror
         </div>
     </div>
-            </div>
         </div><!--end col-->
+        <div class="row -g-3" >
         <div class="col-xxl-2">
             <div>
                 <label for="firstName" class="form-label">CI</label>
@@ -63,7 +63,7 @@
                 @enderror
             </div>
         </div><!--end col-->
-       <div class="col-lg-4">
+       <div class="col-lg-3">
     <label for="genderInput" class="form-label">Email</label>
     <input type="email" 
            class="form-control @error('email') is-invalid @enderror" 
@@ -76,16 +76,18 @@
         <div class="text-danger small mt-1">{{ $message }}</div>
     @enderror
 </div>
-        <div class="col-xxl-4">
+
+        <div class="col-xxl-3">
             <div>
                 <label for="firstName" class="form-label">Contraseña</label>
                 <input type="password" class="form-control" name="password" placeholder="***********">
             </div>
         </div><!--end col-->
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <label for="genderInput" class="form-label">Repetir Contraseña</label>
             <input type="password" class="form-control" name="password_confirmation" placeholder="***********">
         </div><!--end col-->
+    </div>
         <div class="col-xxl-6">
             <div>
                 <label for="emailInput" class="form-label">Telefono</label>
@@ -102,6 +104,7 @@
             <div>
                 <label for="emailInput" class="form-label">Fecha De Nacimientos</label>
                 <input type="date" class="form-control" value="{{$user->fecha_nacimiento}}" name="fecha_nacimiento" placeholder="Introducir # telefonico">
+               
             </div>
         </div><!--end col--> 
         <div class="col-xxl-4">

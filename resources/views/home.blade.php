@@ -199,7 +199,38 @@
 @push('scripts')
 <!-- ApexCharts -->
 <script src="{{ asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
+<script type="module">
+    document.addEventListener("DOMContentLoaded", function() {
+        function iniciarWebSockets() {
+            // Esperamos a que Vite haya inyectado window.Echo
+            if (typeof window.Echo === 'undefined') {
+                console.warn("Esperando a que Laravel Echo cargue...");
+                setTimeout(iniciarWebSockets, 100);
+                return;
+            }
 
+            console.log("¡Conectando a Reverb!");
+            window.Echo.channel('canal-prueba')
+                .listen('.App\\Events\\TestReverb', (evento) => {
+                    console.log('¡EVENTO RECIBIDO!', evento);
+                    
+                    // Alerta elegante de SweetAlert
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Notificación',
+                        text: evento.mensaje,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 5000
+                    });
+                });
+        }
+
+        // Llamamos a la función
+        iniciarWebSockets();
+    });
+</script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         
@@ -267,6 +298,7 @@
         chartDonut.render();
     });
 </script>
+
 @endpush
 
 

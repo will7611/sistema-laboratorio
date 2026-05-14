@@ -32,6 +32,9 @@
             <div class="col-xxl-4">
               <label class="form-label">Fecha Nacimiento</label>
               <input type="date" class="form-control" name="birth_date" value="{{ old('birth_date') }}">
+               @error('birth_date')
+                    <div class="text-danger small mt-1">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="col-xxl-4">

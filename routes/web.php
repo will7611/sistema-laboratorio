@@ -11,6 +11,7 @@ use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\ResultController;
+use App\Events\TestReverb;
 
 Route::get('/', function () {
     return view('auth.login');
@@ -41,7 +42,14 @@ Route::group(['middleware' => ['auth']], function() {
 
     Route::post('proformas/{id}/revertir', [ProformaController::class, 'revertir'])->name('proformas.revertir');
 
+    Route::get('/api/busqueda-pacientes', [\App\Http\Controllers\PacienteController::class, 'search'])->name('pacientes.search.ajax');
 
+Route::get('/disparar-evento', function () {
+    // Usamos dispatch para que se envíe inmediatamente
+    TestReverb::dispatch("¡Hola! Este es un mensaje en tiempo real usando Reverb.");
+    
+    return "Evento disparado con éxito.";
+});
         // Órdenes
     Route::resource('ordenes', OrdersController::class)->only(['index', 'show']);
 
@@ -70,4 +78,19 @@ Route::group(['middleware' => ['auth']], function() {
 // Ruta para cambiar manualmente el estado de un RESULTADO
 Route::post('/resultados/{id}/status', [App\Http\Controllers\ResultController::class, 'updateStatus'])
     ->name('resultados.updateStatus');
+
+});
+
+
+Route::get('/notificaciones/orden/{proforma_id}', function ($proforma_id) {
+    $userId = auth()->id();
+
+    // Marcamos como leída la notificación específica en sys_notifications
+    \Illuminate\Support\Facades\DB::table('sys_notifications')
+        ->where('notifiable_id', $userId)
+        ->whereNull('read_at')
+        ->where('data', 'LIKE', '%"proforma_id":' . $proforma_id . '%')
+        ->update(['read_at' => now()]);
+
+    return redirect('/proformas/' . $proforma_id);
 });

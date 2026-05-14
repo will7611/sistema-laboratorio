@@ -112,4 +112,54 @@ class PacienteController extends Controller
         }
 
     }
+public function search(Request $request)
+{
+    try {
+        $query = trim($request->get('search', ''));
+
+        // Si no hay búsqueda, devolver los 10 más recientes
+        if ($query === '') {
+            $recientes = \App\Models\Paciente::select('id', 'name', 'last_name', 'ci', 'created_at')
+                ->orderBy('id', 'desc')
+                ->limit(10)
+                ->get();
+
+            return response()->json([
+                'recientes'  => $recientes,
+                'resultados' => []
+            ]);
+        }
+
+        $terminos = preg_split('/\s+/', $query);
+        $queryBuilder = \App\Models\Paciente::select('id', 'name', 'last_name', 'ci');
+
+        foreach ($terminos as $termino) {
+            if ($termino !== '') {
+                $queryBuilder->where(function ($q) use ($termino) {
+                    $q->where('name', 'ILIKE', '%' . $termino . '%')
+                      ->orWhere('last_name', 'ILIKE', '%' . $termino . '%')
+                      ->orWhere('ci', 'ILIKE', '%' . $termino . '%');
+                });
+            }
+        }
+
+        $resultados = $queryBuilder
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'recientes'  => [],
+            'resultados' => $resultados
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => true,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
 }
