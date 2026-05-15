@@ -163,7 +163,7 @@
                                     <!-- ESTADO (CONTROL DE ROLES APLICADO AQUÍ) -->
                                     <td class="text-center">
                                         {{-- 1. SI ES ADMIN O LABORATORISTA: VE EL DROPDOWN --}}
-                                        @hasanyrole('Admin|Buiquimica')
+                                        @hasanyrole('Admin|Bioquimica')
                                             <div class="btn-group">
                                                 <button type="button" 
                                                         class="btn btn-sm dropdown-toggle w-100 

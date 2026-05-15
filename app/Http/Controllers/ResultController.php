@@ -259,40 +259,49 @@ class ResultController extends Controller
     
 
 
-     public function updateStatus(Request $request, $id)
-    {
-        // 1. Validar el estado recibido
-        $request->validate([
-            'status' => 'required|in:pendiente,validado,entregado'
-        ]);
+   public function updateStatus(Request $request, $id)
+{
+    // 1. Validar el estado recibido
+    $request->validate([
+        'status' => 'required|in:pendiente,validado,entregado'
+    ]);
 
-        try {
-            // 2. Buscar el Resultado
-            $resultado = Result::findOrFail($id);
+    try {
+        // 2. Buscar el Resultado
+        $resultado = Result::findOrFail($id);
 
-            // 3. Actualizar Estado
-            $resultado->status = $request->status;
+        // 3. Actualizar Datos del Resultado
+        $resultado->status = $request->status;
 
-            // 4. Si el estado es "validado" o superior, registramos al usuario actual
-            if ($request->status == 'validado' || $request->status == 'entregado') {
-                // Guardamos el ID del usuario logueado (porque tu migración pide unsignedBigInteger)
-                $resultado->validated_by = auth()->id(); 
-                
-                // Si aún no tenía fecha de validación, la ponemos ahora
-                if (!$resultado->validated_date) {
-                    $resultado->validated_date = now();
-                }
+        // 4. Lógica de Validación (Bioquímica/Admin)
+        if ($request->status == 'validado' || $request->status == 'entregado') {
+            // Guardamos quién valida
+            $resultado->validated_by = auth()->id(); 
+            
+            if (!$resultado->validated_date) {
+                $resultado->validated_date = now();
             }
-
-            $resultado->save();
-
-            return back()->with('success', 'Estado actualizado a: ' . ucfirst($request->status));
-
-        } catch (\Exception $e) {
-            return back()->with('error', 'Error al actualizar estado: ' . $e->getMessage());
         }
+
+        $resultado->save();
+
+        // 5. CRÍTICO: Sincronizar con la Orden para el Dashboard
+        // Buscamos la orden asociada y actualizamos su estado
+        if ($resultado->orden) {
+            // Si el resultado está validado o entregado, la orden cuenta como "completada"
+            // Si vuelve a pendiente, la orden vuelve a "en_proceso"
+            $nuevoEstadoOrden = ($request->status == 'pendiente') ? 'en_proceso' : $request->status;
+            
+            $resultado->orden->update([
+                'status' => $nuevoEstadoOrden
+            ]);
+        }
+
+        return back()->with('success', 'Estado actualizado a: ' . ucfirst($request->status));
+
+    } catch (\Exception $e) {
+        return back()->with('error', 'Error al actualizar estado: ' . $e->getMessage());
     }
-
-
+}
 
 }

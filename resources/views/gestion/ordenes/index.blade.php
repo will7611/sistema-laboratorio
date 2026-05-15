@@ -89,7 +89,7 @@
     </div>
 </div>
 @endsection
-@role('Admin')
+@role('Admin|Bioquimica')
 {{-- Modal para subir PDF --}}
 <div class="modal fade" id="modalSubirPDF" tabindex="-1">
     <div class="modal-dialog">
