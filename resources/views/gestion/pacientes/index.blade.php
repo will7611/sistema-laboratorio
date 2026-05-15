@@ -2,6 +2,51 @@
 
 @section('content')
 @include('layouts.alerts.alert')
+<style>
+    /* ESTILOS PERSONALIZADOS PARA EL SWITCH DE GÉNERO */
+    .gender-switch-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .gender-switch {
+        position: relative;
+        display: inline-block;
+        width: 55px;
+        height: 26px;
+        margin-bottom: 0;
+    }
+    .gender-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .gender-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #4ba3e3; /* Azul - Masculino */
+        transition: .3s;
+        border-radius: 34px;
+    }
+    .gender-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+    .gender-switch input:checked + .gender-slider {
+        background-color: #f37cb4; /* Rosado - Femenino */
+    }
+    .gender-switch input:checked + .gender-slider:before {
+        transform: translateX(29px);
+    }
+</style>
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
@@ -38,8 +83,10 @@
                                 <th>Nombre</th>
                                 <th>CI</th>
                                 <th>Fecha de Nacimiento</th>
+                                <th>Sexo</th>
                                 <th>Edad</th>
                                 <th>Telefono</th>
+                                
                                 <th>Email</th>
                                 
                                 <th>Direccion</th>
@@ -64,6 +111,7 @@
                                   <td>
                                     {{$paciente->birth_date}}
                                 </td>
+                                <td>{{$paciente->gender}}</td>
                                   <td>
                                     {{$paciente->age}}
                                 </td>

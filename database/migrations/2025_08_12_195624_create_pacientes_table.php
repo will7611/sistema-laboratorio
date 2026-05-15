@@ -21,6 +21,9 @@ return new class extends Migration
 
             $table->date('birth_date')->nullable();
 
+            // NUEVO: Campo Sexo (M = Masculino, F = Femenino)
+            $table->char('gender', 1)->default('M');
+
             $table->string('phone', 30)->nullable();
 
             // Email opcional pero único cuando existe (Postgres permite varios NULL en UNIQUE)

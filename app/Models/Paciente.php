@@ -12,6 +12,7 @@ class Paciente extends Model
         'last_name',
         'ci',
         'birth_date',
+        'gender',
         'phone',
         'email',
         'address',

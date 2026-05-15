@@ -36,7 +36,18 @@
               <label class="form-label">Fecha de Nacimiento</label>
               <input type="date" class="form-control" name="birth_date" value="{{ old('birth_date', optional($paciente->birth_date)->format('Y-m-d')) }}">
             </div>
-
+<div class="col-xxl-4">
+              <label class="form-label d-block">Sexo</label>
+              <div class="gender-switch-container mt-2">
+                <span class="text-info font-size-12 fw-bold">M</span>
+                <label class="gender-switch">
+                  <input type="hidden" name="gender" value="M">
+                  <input type="checkbox" name="gender" value="F" {{ old('gender', $paciente->gender) == 'F' ? 'checked' : '' }}>
+                  <span class="gender-slider"></span>
+                </label>
+                <span class="text-danger font-size-12 fw-bold" style="color: #f37cb4 !important;">F</span>
+              </div>
+            </div>
             {{-- Edad calculada (solo lectura) --}}
             <div class="col-xxl-4">
               <label class="form-label">Edad (calculada)</label>

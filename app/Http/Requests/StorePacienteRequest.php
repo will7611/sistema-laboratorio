@@ -62,7 +62,7 @@ class StorePacienteRequest extends FormRequest
                 'before_or_equal:today', // Edad no menor a 0
                 'after_or_equal:' . $fechaLimite // Edad no mayor a 120 años
             ],
-
+            'gender' => ['required'],
             'phone' => ['nullable', 'string', 'max:30'],
 
             // Email opcional pero único si existe

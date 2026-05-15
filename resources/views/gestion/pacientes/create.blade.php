@@ -36,7 +36,18 @@
                     <div class="text-danger small mt-1">{{ $message }}</div>
                 @enderror
             </div>
-
+<div class="col-xxl-4">
+              <label class="form-label d-block">Sexo</label>
+              <div class="gender-switch-container mt-2">
+                <span class="text-info font-size-12 fw-bold">M</span>
+                <label class="gender-switch">
+                  <input type="hidden" name="gender" value="M">
+                  <input type="checkbox" name="gender" value="F" id="gender_create" {{ old('gender') == 'F' ? 'checked' : '' }}>
+                  <span class="gender-slider"></span>
+                </label>
+                <span class="text-danger font-size-12 fw-bold" style="color: #f37cb4 !important;">F</span>
+              </div>
+            </div>
             <div class="col-xxl-4">
               <label class="form-label">Teléfono</label>
               <input type="text" class="form-control" name="phone" value="{{ old('phone') }}" placeholder="Teléfono">
